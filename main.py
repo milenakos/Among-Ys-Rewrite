@@ -1,7 +1,7 @@
-v = 3
+v = "v2.1.0"
 new_ver = False
 
-import random, math, os, pygame, requests
+import random, math, os, pygame, requests, json
 
 pygame.init()
 pygame.font.init()
@@ -177,7 +177,9 @@ while running:
         x, y = x_save, y_save
 
     if ticks == 2:
-        if int(requests.get("https://among-ys.glitch.me/rewrite-ver.html").text) > v:
+        latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
+        version = json.loads(latest)["name"]
+        if version != v:
             font = pygame.font.Font("arlrdbd.ttf", 30)
             new_ver = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
         back = pygame.image.load('img/skeld.png')
