@@ -1,10 +1,4 @@
-v = "v2.2.0"
-new_ver = False
-
-import random, math, os, pygame, requests, json
-
-pygame.init()
-pygame.font.init()
+import random, math, os, pygame, requests, json, time
 
 class Name(pygame.sprite.Sprite):
     def __init__(self, name):
@@ -75,15 +69,22 @@ class Bot(pygame.sprite.Sprite):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
 def main():
+    v = "v2.2.0"
+    new_ver = False
+
+    pygame.init()
+    pygame.font.init()
+
     do_kill = False
     do_write = False
-    do_super_write = False
+    do_ping_pong = False
     kill_possible = True
     ticks = 0
     FPS = 120
     x = -2800
     y = -450
     change = 12
+    old_super = -1
     orient = "Left"
     names = ["Xiaoness191", "Milenakos", "SOKE®", "RubiK", "=/", "^ Frinkifail ^", "m(._.)m",
              "Andrew Meep", "atomicgrape908", "suffix.", "CatRBLX", "Deltaonetrooper", "drealy", "Drewskibob",
@@ -153,31 +154,29 @@ def main():
            
         new_x = new_y = 0
 
-        if do_super_write:
-            if random.randint(0, 15) == 0 or do_super_write == True:
-                if random.randint(0, 1) == 0:
-                    if random.randint(0, 1) == 0:
-                        new_x += change
-                        do_super_write = 4
-                    else:
-                        new_x -= change
-                        do_super_write = 1
-                else:
-                    if random.randint(0, 1) == 0:
-                        new_y += change
-                        do_super_write = 2
-                    else:
-                        new_y -= change
-                        do_super_write = 3
-            else:
-                if do_super_write == 4:
-                    new_x += change
-                elif do_super_write == 1:
-                    new_x -= change
-                elif do_super_write == 2:
-                    new_y += change
-                elif do_super_write == 3:
-                    new_y -= change
+        if do_ping_pong:
+            if do_ping_pong == True:
+                do_ping_pong = random.randint(1, 8)
+            if do_ping_pong == 1:
+                new_x += change
+            elif do_ping_pong == 2:
+                new_x -= change
+            elif do_ping_pong == 3:
+                new_y += change
+            elif do_ping_pong == 4:
+                new_y -= change
+            elif do_ping_pong == 5:
+                new_y -= change
+                new_x -= change
+            elif do_ping_pong == 6:
+                new_y -= change
+                new_x += change
+            elif do_ping_pong == 7:
+                new_y += change
+                new_x -= change
+            elif do_ping_pong == 8:
+                new_y += change
+                new_x += change
 
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             new_x += change
@@ -202,6 +201,10 @@ def main():
 
         if walls_mask.overlap(hitbox_mask, (-x, -y)):
             x, y = x_save, y_save
+            if do_ping_pong:
+                old_super = do_ping_pong
+                while do_ping_pong == old_super:
+                    do_ping_pong = random.randint(1, 8)
 
         if ticks == 2:
             latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
