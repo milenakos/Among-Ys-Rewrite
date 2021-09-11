@@ -148,6 +148,7 @@ def main():
             do_kill = False
             if len(bots) == 0:
                 kill_possible = False
+                os.system("start \"\" https://youtube.com/watch?v=dQw4w9WgXcQ")
 
         keys = pygame.key.get_pressed()
 
