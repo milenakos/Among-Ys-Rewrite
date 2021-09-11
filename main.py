@@ -85,6 +85,7 @@ def main():
     y = -450
     change = 12
     old_super = -1
+    ping = -100
     orient = "Left"
     names = ["Xiaoness191", "Milenakos", "SOKE®", "RubiK", "=/", "^ Frinkifail ^", "m(._.)m",
              "Andrew Meep", "atomicgrape908", "suffix.", "CatRBLX", "Deltaonetrooper", "drealy", "Drewskibob",
@@ -187,6 +188,13 @@ def main():
                 new_y += change
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                 new_y -= change
+
+        if keys[pygame.K_p] and ticks - ping > 100:
+            ping = ticks
+            if do_ping_pong:
+                do_ping_pong = False
+            else:
+                do_ping_pong = True
 
         if new_x > 0:
             orient = "Left"
