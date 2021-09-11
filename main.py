@@ -86,6 +86,7 @@ def main():
     change = 12
     old_super = -1
     ping = -100
+    kill_save = -120
     orient = "Left"
     names = ["Xiaoness191", "Milenakos", "SOKE®", "RubiK", "=/", "^ Frinkifail ^", "m(._.)m",
              "Andrew Meep", "atomicgrape908", "suffix.", "CatRBLX", "Deltaonetrooper", "drealy", "Drewskibob",
@@ -136,11 +137,12 @@ def main():
             dists = []
             for i in bots:
                 dists.append(i.distance_from_center())
-            if min(dists) <= 270:
+            if min(dists) <= 270 and ticks - kill_save > 120:
                 enemy_ind = dists.index(min(dists))
                 enemy = bots[enemy_ind]
                 x, y = enemy.get_coords()
                 bots.pop(enemy_ind)
+                kill_save = ticks
                 textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
                 image = pygame.Surface((1280, 720))
                 image.blit(textSurf, [0, 0])
