@@ -177,16 +177,16 @@ def main():
             elif do_ping_pong == 8:
                 new_y += change
                 new_x += change
+        else:
+            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+                new_x += change
+            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+                new_x -= change
 
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            new_x += change
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            new_x -= change
-
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            new_y += change
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            new_y -= change
+            if keys[pygame.K_w] or keys[pygame.K_UP]:
+                new_y += change
+            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+                new_y -= change
 
         if new_x > 0:
             orient = "Left"
