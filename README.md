@@ -9,6 +9,10 @@ https://discord.gg/tcSpWhnhTX
 
 # Build
 Install requrements:
+
+```
 pip install pygame
 pip install pyinstaller
+```
+
 Then run make.bat
