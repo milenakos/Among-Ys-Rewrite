@@ -1,4 +1,4 @@
-v = "v2.1.0"
+v = "v2.2.0"
 new_ver = False
 
 import random, math, os, pygame, requests, json
