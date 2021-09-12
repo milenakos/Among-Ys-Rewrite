@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, json, time, sys, threading
+import random, math, os, pygame, requests, json, sys
 import tkinter as tk
 
 class Name(pygame.sprite.Sprite):
