@@ -1,4 +1,5 @@
 import random, math, os, pygame, requests, json, time
+import tkinter as tk
 
 class Name(pygame.sprite.Sprite):
     def __init__(self, name):
@@ -21,14 +22,14 @@ class Name(pygame.sprite.Sprite):
         return self.name
 
 class Crew(pygame.sprite.Sprite):
-    def __init__(self, colors):
+    def __init__(self, colors, name):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("img/crew/" + random.choice(colors) + ".png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (74, 99))
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
 
-        self.name = Name("Player")
+        self.name = Name(name)
 
     def update(self, x, y, screen, orient):
         self.name.update(self.rect.center, screen)
@@ -68,7 +69,7 @@ class Bot(pygame.sprite.Sprite):
     def get_coords(self):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
-def main():
+def main(player_name):
     v = "v2.2.0"
     new_ver = False
 
@@ -224,7 +225,9 @@ def main():
                 font = pygame.font.Font("arlrdbd.ttf", 30)
                 new_ver = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
             back = pygame.image.load('img/skeld.png')
-            crew = Crew(colors)
+            if len(player_name) > 15:
+                player_name = "Player"
+            crew = Crew(colors, player_name)
             if not do_write:
                 for i in range(0, len(os.listdir(".\\moves"))):
                     bot = Bot(i, colors, names, ticks)
@@ -262,5 +265,27 @@ def main():
 
     pygame.quit()
 
+def settings():
+    master = tk.Tk()
+    master.title("Settings")
+    tk.Label(master, text="Your name").grid(row=0)
+    e1 = tk.Entry(master)
+    e1.grid(row=0, column=1)
+    tk.Button(master, 
+          text='Start', 
+          command=master.quit).grid(row=3, 
+                            column=0, 
+                            sticky=tk.W, 
+                            pady=4)
+    tk.mainloop()
+    return e1.get(), master
+
 if __name__ == "__main__":
-    main()
+    c = True
+    try:
+        a, b = settings()
+    except:
+        c = False
+    if c:
+        b.destroy()
+        main(a)
