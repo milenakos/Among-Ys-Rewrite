@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, json, time
+import random, math, os, pygame, requests, json, time, sys
 import tkinter as tk
 
 class Name(pygame.sprite.Sprite):
@@ -220,7 +220,7 @@ def main(player_name, player_color):
         if ticks == 2:
             latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
             version = json.loads(latest)["name"]
-            if version != v:
+            if version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 font = pygame.font.Font("arlrdbd.ttf", 30)
                 new_ver = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
             back = pygame.image.load('img/skeld.png')
