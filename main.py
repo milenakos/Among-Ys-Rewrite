@@ -92,7 +92,7 @@ def main(player_name, player_color):
     names = ["Xiaoness191", "Milenakos", "SOKE®", "RubiK", "=/", "^ Frinkifail ^", "m(._.)m",
              "Andrew Meep", "atomicgrape908", "suffix.", "CatRBLX", "Deltaonetrooper", "drealy", "Drewskibob",
              "Euro2555", "nclazrfpyt", "finched also poppi alpha", "FloppityLopp", "GentleToonMan", "GentleToonMan",
-             "J'zargo", "lucyy", "m(._.)mV2", "Mr. snowmanfan20_YT", "normal", "exotic", "Stoned", "That_One_Amogus_Person",
+             "J'zargo", "lucyy", "m(._.)mV2", "Mr. snowmanfan20_YT", "normal", "exotic", "Stoned", "Allleeeeeccccccc",
              "ThisIsMyUsername", "tiddcunt", "Vana_Ungkap", "WarNoodleZ", "Wut", "Yuuta Togashi", "Zatrex", "FedeGamer", "hezigonic"]
     colors = ["Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
               "Tan", "Coral", "Olive", "Fortegreen"]
@@ -224,8 +224,6 @@ def main(player_name, player_color):
                 font = pygame.font.Font("arlrdbd.ttf", 30)
                 new_ver = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
             back = pygame.image.load('img/skeld.png')
-            if len(player_name) > 15:
-                player_name = "Player"
             crew = Crew(player_color, player_name)
             if not do_write:
                 for i in range(0, len(os.listdir(".\\moves"))):
@@ -264,6 +262,10 @@ def main(player_name, player_color):
 
     pygame.quit()
 
+def character_limit(entry_text):
+    if len(entry_text.get()) > 15:
+        entry_text.set(entry_text.get()[:15])
+
 def settings():
     master = tk.Tk()
     master.title("Settings")
@@ -272,7 +274,8 @@ def settings():
     tk.Label(master, text="Your color").grid(row=2, column=0)
     variable = tk.StringVar(master)
     variable.set("Red")
-    e1 = tk.Entry(master)
+    entry_text = tk.StringVar()
+    e1 = tk.Entry(master, textvariable = entry_text)
     e2 = tk.OptionMenu(master, variable, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
               "Tan", "Coral", "Olive", "Fortegreen")
     e1.grid(row=1, column=1)
@@ -285,8 +288,9 @@ def settings():
           text='Quit',
           width=15,
           command=master.destroy).grid(row=3, column=0)
+    entry_text.trace("w", lambda *args: character_limit(entry_text))
     tk.mainloop()
-    return e1.get(), master, variable.get()
+    return entry_text.get(), master, variable.get()
 
 if __name__ == "__main__":
     start = True
