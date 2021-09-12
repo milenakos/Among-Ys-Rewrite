@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, json, time, sys
+import random, math, os, pygame, requests, json, time, sys, threading
 import tkinter as tk
 
 class Name(pygame.sprite.Sprite):
@@ -71,7 +71,7 @@ class Bot(pygame.sprite.Sprite):
 
 def main(player_name, player_color):
     v = "v2.2.0"
-    new_ver = False
+    loading = False
 
     pygame.init()
     pygame.font.init()
@@ -104,21 +104,17 @@ def main(player_name, player_color):
     clock = pygame.time.Clock()
     all_sprites = pygame.sprite.Group()
 
-    back = pygame.image.load('img/loadings/loading.png')
-
-    walls = pygame.image.load("img/layout.png")
-    walls_mask = pygame.mask.from_surface(walls)
-
-    hitbox = pygame.image.load("img/hitbox.png")
-    hitbox_mask = pygame.mask.from_surface(hitbox)
-
-    kill = pygame.image.load("img/kill.png")
-    kill_btn = kill.get_rect()
-    kill_btn.center = (1200, 640)
-
-    screen.blit(back, (0, 0))
-
     running = True
+
+    font = pygame.font.Font("arlrdbd.ttf", 30)
+    loading = font.render("Loading images...", 1, (255, 255, 255))
+
+    screen.fill((0, 0, 0))
+    
+    screen.blit(loading, (0, 680))
+    
+    all_sprites.update(x, y, screen, orient)
+    pygame.display.flip()
 
     while running:
         clock.tick(FPS)
@@ -134,112 +130,130 @@ def main(player_name, player_color):
                 if event.key == pygame.K_q:
                     do_kill = True
 
-        if do_kill and kill_possible:
-            dists = []
-            for i in bots:
-                dists.append(i.distance_from_center())
-            if min(dists) <= 270 and ticks - kill_save > 120:
-                enemy_ind = dists.index(min(dists))
-                enemy = bots[enemy_ind]
-                x, y = enemy.get_coords()
-                bots.pop(enemy_ind)
-                kill_save = ticks
-                textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
-                image = pygame.Surface((1280, 720))
-                image.blit(textSurf, [0, 0])
-                image.set_colorkey((0,0,0))
-            do_kill = False
-            if len(bots) == 0:
-                kill_possible = False
+        if ticks != 1:
+            if do_kill and kill_possible:
+                dists = []
+                for i in bots:
+                    dists.append(i.distance_from_center())
+                if min(dists) <= 270 and ticks - kill_save > 120:
+                    enemy_ind = dists.index(min(dists))
+                    enemy = bots[enemy_ind]
+                    x, y = enemy.get_coords()
+                    bots.pop(enemy_ind)
+                    kill_save = ticks
+                    textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+                    image = pygame.Surface((1280, 720))
+                    image.blit(textSurf, [0, 0])
+                    image.set_colorkey((0,0,0))
+                do_kill = False
+                if len(bots) == 0:
+                    kill_possible = False
 
-        keys = pygame.key.get_pressed()
+            keys = pygame.key.get_pressed()
 
-        x_save, y_save = x, y
-           
-        new_x = new_y = 0
+            x_save, y_save = x, y
+               
+            new_x = new_y = 0
 
-        if do_ping_pong:
-            if do_ping_pong == True:
-                do_ping_pong = random.randint(1, 8)
-            if do_ping_pong == 1:
-                new_x += change
-            elif do_ping_pong == 2:
-                new_x -= change
-            elif do_ping_pong == 3:
-                new_y += change
-            elif do_ping_pong == 4:
-                new_y -= change
-            elif do_ping_pong == 5:
-                new_y -= change
-                new_x -= change
-            elif do_ping_pong == 6:
-                new_y -= change
-                new_x += change
-            elif do_ping_pong == 7:
-                new_y += change
-                new_x -= change
-            elif do_ping_pong == 8:
-                new_y += change
-                new_x += change
-        else:
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                new_x += change
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                new_x -= change
-
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
-                new_y += change
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                new_y -= change
-
-        if keys[pygame.K_p] and ticks - ping > 100:
-            ping = ticks
             if do_ping_pong:
-                do_ping_pong = False
-            else:
-                do_ping_pong = True
-
-        if new_x > 0:
-            orient = "Left"
-        elif new_x < 0:
-            orient = "Right"
-
-        x += new_x
-        y += new_y
-
-        if do_write:
-            moves.append([x, y, orient])
-
-        if walls_mask.overlap(hitbox_mask, (-x, -y)):
-            x, y = x_save, y_save
-            if do_ping_pong:
-                old_super = do_ping_pong
-                while do_ping_pong == old_super:
+                if do_ping_pong == True:
                     do_ping_pong = random.randint(1, 8)
+                if do_ping_pong == 1:
+                    new_x += change
+                elif do_ping_pong == 2:
+                    new_x -= change
+                elif do_ping_pong == 3:
+                    new_y += change
+                elif do_ping_pong == 4:
+                    new_y -= change
+                elif do_ping_pong == 5:
+                    new_y -= change
+                    new_x -= change
+                elif do_ping_pong == 6:
+                    new_y -= change
+                    new_x += change
+                elif do_ping_pong == 7:
+                    new_y += change
+                    new_x -= change
+                elif do_ping_pong == 8:
+                    new_y += change
+                    new_x += change
+            else:
+                if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+                    new_x += change
+                if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+                    new_x -= change
 
+                if keys[pygame.K_w] or keys[pygame.K_UP]:
+                    new_y += change
+                if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+                    new_y -= change
+
+            if keys[pygame.K_p] and ticks - ping > 100:
+                ping = ticks
+                if do_ping_pong:
+                    do_ping_pong = False
+                else:
+                    do_ping_pong = True
+
+            if new_x > 0:
+                orient = "Left"
+            elif new_x < 0:
+                orient = "Right"
+
+            x += new_x
+            y += new_y
+
+            if do_write:
+                moves.append([x, y, orient])
+
+            if walls_mask.overlap(hitbox_mask, (-x, -y)):
+                x, y = x_save, y_save
+                if do_ping_pong:
+                    old_super = do_ping_pong
+                    while do_ping_pong == old_super:
+                        do_ping_pong = random.randint(1, 8)
+
+        if ticks == 1:
+            walls = pygame.image.load("img/layout.png")
+            walls_mask = pygame.mask.from_surface(walls)
+
+            hitbox = pygame.image.load("img/hitbox.png")
+            hitbox_mask = pygame.mask.from_surface(hitbox)
+
+            kill = pygame.image.load("img/kill.png")
+            kill_btn = kill.get_rect()
+            kill_btn.center = (1200, 640)
+            loading = font.render("Checking for updates...", 1, (255, 255, 255))
         if ticks == 2:
             latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
             version = json.loads(latest)["name"]
-            if version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                font = pygame.font.Font("arlrdbd.ttf", 30)
-                new_ver = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
+            loading = font.render("Loading map...", 1, (255, 255, 255))
+        elif ticks == 3:
             back = pygame.image.load('img/skeld.png')
             crew = Crew(player_color, player_name)
+            loading = font.render("Loading bots...", 1, (255, 255, 255))
+        elif ticks == 4:
             if not do_write:
                 for i in range(0, len(os.listdir(".\\moves"))):
                     bot = Bot(i, colors, names, ticks)
                     bots.append(bot)
             all_sprites.add(crew)
-
-            font = pygame.font.Font("arlrdbd.ttf", 35)
-            textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+            loading = font.render("Loading text...", 1, (255, 255, 255))
+        elif ticks == 5:
+            font1 = pygame.font.Font("arlrdbd.ttf", 35)
+            textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
             image = pygame.Surface((1280, 720))
             image.blit(textSurf, [0, 0])
             image.set_colorkey((0,0,0))
+            if version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                loading = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
+            else:
+                loading = False
 
         screen.fill((0, 0, 0))
         
-        if ticks > 1:
+        if ticks > 4:
             screen.blit(back, (x, y))
             for i in bots:
                 i.update(x, y, screen, orient)
@@ -247,10 +261,8 @@ def main(player_name, player_color):
             if kill_possible:
                 screen.blit(kill, kill_btn)
             walls.get_rect().center = (x, y)
-            if new_ver:
-                screen.blit(new_ver, (0, 680))
-        else:
-            screen.blit(back, (0, 0))
+        if loading:
+            screen.blit(loading, (0, 680))
         
         all_sprites.update(x, y, screen, orient)
         pygame.display.flip()
@@ -293,11 +305,9 @@ def settings():
     return entry_text.get(), master, variable.get()
 
 if __name__ == "__main__":
-    start = True
     try:
         a, b, c = settings()
-    except:
-        start = False
-    if start:
         b.destroy()
         main(a, c)
+    except Exception as e:
+        print(e)
