@@ -279,9 +279,11 @@ def settings():
     e2.grid(row=2, column=1)
     tk.Button(master, 
           text='Start',
+          width=15,
           command=master.quit).grid(row=3, column=1)
     tk.Button(master, 
           text='Quit',
+          width=15,
           command=master.destroy).grid(row=3, column=0)
     tk.mainloop()
     return e1.get(), master, variable.get()
