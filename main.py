@@ -24,7 +24,7 @@ class Name(pygame.sprite.Sprite):
 class Crew(pygame.sprite.Sprite):
     def __init__(self, colors, name):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("img/crew/" + random.choice(colors) + ".png").convert_alpha()
+        self.image = pygame.image.load("img/crew/" + colors + ".png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (74, 99))
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
@@ -69,7 +69,7 @@ class Bot(pygame.sprite.Sprite):
     def get_coords(self):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
-def main(player_name):
+def main(player_name, player_color):
     v = "v2.2.0"
     new_ver = False
 
@@ -226,7 +226,7 @@ def main(player_name):
             back = pygame.image.load('img/skeld.png')
             if len(player_name) > 15:
                 player_name = "Player"
-            crew = Crew(colors, player_name)
+            crew = Crew(player_color, player_name)
             if not do_write:
                 for i in range(0, len(os.listdir(".\\moves"))):
                     bot = Bot(i, colors, names, ticks)
@@ -267,24 +267,31 @@ def main(player_name):
 def settings():
     master = tk.Tk()
     master.title("Settings")
-    tk.Label(master, text="Your name").grid(row=0)
+    tk.Label(master, text="Among Ys Settings").grid(row=0)
+    tk.Label(master, text="Your name").grid(row=1, column=0)
+    tk.Label(master, text="Your color").grid(row=2, column=0)
+    variable = tk.StringVar(master)
+    variable.set("Red")
     e1 = tk.Entry(master)
-    e1.grid(row=0, column=1)
+    e2 = tk.OptionMenu(master, variable, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
+              "Tan", "Coral", "Olive", "Fortegreen")
+    e1.grid(row=1, column=1)
+    e2.grid(row=2, column=1)
     tk.Button(master, 
-          text='Start', 
-          command=master.quit).grid(row=3, 
-                            column=0, 
-                            sticky=tk.W, 
-                            pady=4)
+          text='Start',
+          command=master.quit).grid(row=3, column=1)
+    tk.Button(master, 
+          text='Quit',
+          command=master.destroy).grid(row=3, column=0)
     tk.mainloop()
-    return e1.get(), master
+    return e1.get(), master, variable.get()
 
 if __name__ == "__main__":
-    c = True
+    start = True
     try:
-        a, b = settings()
+        a, b, c = settings()
     except:
-        c = False
-    if c:
+        start = False
+    if start:
         b.destroy()
-        main(a)
+        main(a, c)
