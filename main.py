@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, json, sys
+import random, math, os, pygame, requests, json, sys, logging
 import tkinter as tk
 
 class Name(pygame.sprite.Sprite):
@@ -19,6 +19,7 @@ class Name(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
     def get_name(self):
+        logging.info("Class Name: Returning %s...", self.name)
         return self.name
 
 class Crew(pygame.sprite.Sprite):
@@ -47,7 +48,8 @@ class Bot(pygame.sprite.Sprite):
         self.rect.center = (640, 360)
         self.moves = eval(open("moves\\file" + str(idd) + ".txt", "r").read())
         self.future_name = random.randint(0, len(names) - 1)
-        self.name = Name(names[self.future_name])
+        self.my_name = names[self.future_name]
+        self.name = Name(self.my_name)
         names.pop(self.future_name)
         self.ticks = ticks
 
@@ -73,9 +75,12 @@ def main(player_name, player_color):
     v = "v2.2.0"
     loading = False
 
+    logging.info("Loading pygame...")
+    
     pygame.init()
     pygame.font.init()
 
+    logging.info("Loading variables...")
     do_kill = False
     do_write = False
     do_ping_pong = False
@@ -99,6 +104,7 @@ def main(player_name, player_color):
     moves = []
     bots = []
 
+    logging.info("Creating game window...")
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Among Ys Rewrite Beta")
     clock = pygame.time.Clock()
@@ -106,6 +112,7 @@ def main(player_name, player_color):
 
     running = True
 
+    logging.info("Rendering first frame...")
     font = pygame.font.Font("arlrdbd.ttf", 30)
     loading = font.render("Loading images...", 1, (255, 255, 255))
 
@@ -122,16 +129,20 @@ def main(player_name, player_color):
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                logging.info("Got exit signal.")
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and kill_btn.collidepoint(event.pos):
+                    logging.info("Got mouse press signal.")
                     do_kill = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
+                    logging.info("Got Q press signal.")
                     do_kill = True
 
         if ticks != 1:
             if do_kill and kill_possible:
+                logging.info("Killing...")
                 dists = []
                 for i in bots:
                     dists.append(i.distance_from_center())
@@ -139,14 +150,19 @@ def main(player_name, player_color):
                     enemy_ind = dists.index(min(dists))
                     enemy = bots[enemy_ind]
                     x, y = enemy.get_coords()
+                    logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
                     bots.pop(enemy_ind)
                     kill_save = ticks
+                    logging.info("%s people left, rendering counter.", str(len(bots) + 1))
                     textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
                     image = pygame.Surface((1280, 720))
                     image.blit(textSurf, [0, 0])
                     image.set_colorkey((0,0,0))
+                else:
+                    logging.info("No bots in kill distance or kill cooldown is active.")
                 do_kill = False
                 if len(bots) == 0:
+                    logging.info("All bots killed.")
                     kill_possible = False
 
             keys = pygame.key.get_pressed()
@@ -190,6 +206,7 @@ def main(player_name, player_color):
                     new_y -= change
 
             if keys[pygame.K_p] and ticks - ping > 100:
+                logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
                 ping = ticks
                 if do_ping_pong:
                     do_ping_pong = False
@@ -213,8 +230,10 @@ def main(player_name, player_color):
                     old_super = do_ping_pong
                     while do_ping_pong == old_super:
                         do_ping_pong = random.randint(1, 8)
+                    logging.info("New ping pong direction, %s.", do_ping_pong)
 
         if ticks == 1:
+            logging.info("Loading images...")
             walls = pygame.image.load("img/layout.png")
             walls_mask = pygame.mask.from_surface(walls)
 
@@ -224,14 +243,17 @@ def main(player_name, player_color):
             kill = pygame.image.load("img/kill.png")
             kill_btn = kill.get_rect()
             kill_btn.center = (1200, 640)
+            logging.info("Checking for updates...")
             loading = font.render("Checking for updates...", 1, (255, 255, 255))
         if ticks == 2:
             latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
             version = json.loads(latest)["name"]
+            logging.info("Loading map...")
             loading = font.render("Loading map...", 1, (255, 255, 255))
         elif ticks == 3:
             back = pygame.image.load('img/skeld.png')
             crew = Crew(player_color, player_name)
+            logging.info("Loading bots...")
             loading = font.render("Loading bots...", 1, (255, 255, 255))
         elif ticks == 4:
             if not do_write:
@@ -239,14 +261,17 @@ def main(player_name, player_color):
                     bot = Bot(i, colors, names, ticks)
                     bots.append(bot)
             all_sprites.add(crew)
+            logging.info("Loading text...")
             loading = font.render("Loading text...", 1, (255, 255, 255))
         elif ticks == 5:
+            logging.info("Rendering counter...")
             font1 = pygame.font.Font("arlrdbd.ttf", 35)
             textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
             image = pygame.Surface((1280, 720))
             image.blit(textSurf, [0, 0])
             image.set_colorkey((0,0,0))
             if version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                logging.warning("Using old version of Among Ys Rewrite.")
                 loading = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
             else:
                 loading = False
@@ -272,15 +297,18 @@ def main(player_name, player_color):
         file.write(str(moves))
         file.close()
 
+    logging.info("Quitting pygame...")
     pygame.quit()
 
 def character_limit(entry_text):
     if len(entry_text.get()) > 15:
+        logging.info("Over 15 characters, limiting...")
         entry_text.set(entry_text.get()[:15])
 
 def settings():
     master = tk.Tk()
     master.title("Settings")
+    logging.info('Loaded! Adding buttons...')
     tk.Label(master, text="Among Ys Settings").grid(row=0)
     tk.Label(master, text="Your name").grid(row=1, column=0)
     tk.Label(master, text="Your color").grid(row=2, column=0)
@@ -300,14 +328,28 @@ def settings():
           text='Quit',
           width=15,
           command=master.destroy).grid(row=3, column=0)
+    logging.info('Done! Waiting for input...')
     entry_text.trace("w", lambda *args: character_limit(entry_text))
     tk.mainloop()
+    logging.info('Got input! Closing settings...')
     return entry_text.get(), master, variable.get()
 
 if __name__ == "__main__":
     try:
+        os.remove("log.txt")
+    except:
+        pass
+    logging.basicConfig(filename='log.txt', encoding='utf-8', level=logging.INFO)
+    try:
+        logging.info('Loading settings window...')
         a, b, c = settings()
+        logging.info('Destorying window...')
         b.destroy()
+        logging.info('Starting game...')
         main(a, c)
     except Exception as e:
-        print(e)
+        logging.warning('Got error! Analysing...')
+        if e == "can't invoke \"destroy\" command: application has been destroyed":
+            logging.info("Aplication exit by user, no errors.")
+        else:
+            logging.fatal(e)
