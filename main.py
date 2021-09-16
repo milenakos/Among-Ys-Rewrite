@@ -1,5 +1,38 @@
-import random, math, os, pygame, requests, json, sys, logging
+import random, math, os, pygame, requests, json, sys, logging, socket, threading
 import tkinter as tk
+
+class Client:
+    def __init__(self, host, port, nickname):
+        self.nickname = nickname
+        self.info = None
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((host, port))
+
+        receive_thread = threading.Thread(target=self.receive)
+        receive_thread.start()
+
+    def receive(self):
+        while True:
+            message = self.sock.recv(1024).decode("utf-8")
+            if message == 'NICK':
+                self.sock.send(self.nickname.encode("utf-8"))
+                self.info = True
+            elif message:
+                try:
+                    self.info = eval(message) # weak line.
+                except Exception as e:
+                    print(e)
+
+    def write(self, data):
+        message = "[\"" + self.nickname + "\", " + data + "]"
+        self.sock.send(message.encode('utf-8'))
+
+    def close(self):
+        self.sock.close()
+
+    def get(self):
+        return self.info
 
 class Name(pygame.sprite.Sprite):
     def __init__(self, name):
@@ -29,14 +62,26 @@ class Crew(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (74, 99))
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
+        self.x = 640
+        self.y = 360
 
+        self.color = colors
+        self.nickname = name
         self.name = Name(name)
 
-    def update(self, x, y, screen, orient):
+    def update(self, orient, *args):
+        self.orient = orient
+        if args:
+            self.x = args[0]
+            self.y = args[1]
+
+    def draw(self, screen, *args):
+        if args:
+            self.rect.center = (args[0] - self.x + 640, args[1] - self.y + 360)
         self.name.update(self.rect.center, screen)
-        if orient == "Right":
+        if self.orient == "Right":
             screen.blit(self.image, self.rect)
-        elif orient == "Left":
+        elif self.orient == "Left":
             screen.blit(pygame.transform.flip(self.image, True, False), self.rect)
 
 class Bot(pygame.sprite.Sprite):
@@ -71,7 +116,7 @@ class Bot(pygame.sprite.Sprite):
     def get_coords(self):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
-def main(player_name, player_color):
+def main(player_name, player_color, is_multiplayer):
     v = "v2.2.0"
     loading = False
 
@@ -103,6 +148,7 @@ def main(player_name, player_color):
               "Tan", "Coral", "Olive", "Fortegreen"]
     moves = []
     bots = []
+    players = []
 
     logging.info("Creating game window...")
     screen = pygame.display.set_mode((1280, 720))
@@ -131,17 +177,17 @@ def main(player_name, player_color):
             if event.type == pygame.QUIT:
                 logging.info("Got exit signal.")
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN and not is_multiplayer:
                 if event.button == 1 and kill_btn.collidepoint(event.pos):
                     logging.info("Got mouse press signal.")
                     do_kill = True
-            elif event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN and not is_multiplayer:
                 if event.key == pygame.K_q:
                     logging.info("Got Q press signal.")
                     do_kill = True
 
         if ticks != 1:
-            if do_kill and kill_possible:
+            if do_kill and kill_possible and not is_multiplayer:
                 logging.info("Killing...")
                 dists = []
                 for i in bots:
@@ -205,7 +251,7 @@ def main(player_name, player_color):
                 if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                     new_y -= change
 
-            if keys[pygame.K_p] and ticks - ping > 100:
+            if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
                 logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
                 ping = ticks
                 if do_ping_pong:
@@ -220,8 +266,26 @@ def main(player_name, player_color):
 
             x += new_x
             y += new_y
+            
+            if ticks > 4 and is_multiplayer:
+                info = client.get()
+                if info != None:
+                    print(info)
+                    if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
+                        found = False
+                        for j in players:
+                            if info[0] == j.nickname and info[4] == j.color:
+                                j.update(info[3], info[1], info[2])
+                                found = True
+                                break
+                        if not found:
+                            new = Crew(info[4], info[0])
+                            players.append(new)
+                            new.update(info[3], info[1], info[2])
+                    if new_x != 0 or new_y != 0:
+                        client.write(str(x) + ", " + str(y) + ", \"" + orient + "\", \"" + player_color + "\"")
 
-            if do_write:
+            if do_write and not is_multiplayer:
                 moves.append([x, y, orient])
 
             if walls_mask.overlap(hitbox_mask, (-x, -y)):
@@ -253,23 +317,32 @@ def main(player_name, player_color):
         elif ticks == 3:
             back = pygame.image.load('img/skeld.png')
             crew = Crew(player_color, player_name)
-            logging.info("Loading bots...")
-            loading = font.render("Loading bots...", 1, (255, 255, 255))
-        elif ticks == 4:
+            if is_multiplayer:
+                logging.info("Connecting to server...")
+                loading = font.render("Connecting to server...", 1, (255, 255, 255))
+            else:
+                logging.info("Loading bots...")
+                loading = font.render("Loading bots...", 1, (255, 255, 255))
+        elif ticks == 4 and not is_multiplayer:
             if not do_write:
                 for i in range(0, len(os.listdir(".\\moves"))):
                     bot = Bot(i, colors, names, ticks)
                     bots.append(bot)
-            all_sprites.add(crew)
             logging.info("Loading text...")
             loading = font.render("Loading text...", 1, (255, 255, 255))
-        elif ticks == 5:
+        elif ticks == 4:
+            HOST = '127.0.0.1' # server public ip
+            PORT = 9090
+
+            client = Client(HOST, PORT, player_name)
+        elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
             font1 = pygame.font.Font("arlrdbd.ttf", 35)
             textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
             image = pygame.Surface((1280, 720))
             image.blit(textSurf, [0, 0])
             image.set_colorkey((0,0,0))
+        if ticks == 5:
             if version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
                 loading = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
@@ -282,9 +355,14 @@ def main(player_name, player_color):
             screen.blit(back, (x, y))
             for i in bots:
                 i.update(x, y, screen, orient)
-            screen.blit(image, (0, 0))
-            if kill_possible:
-                screen.blit(kill, kill_btn)
+            for i in players:
+                i.draw(screen, x, y)
+            if not is_multiplayer:
+                screen.blit(image, (0, 0))
+                if kill_possible:
+                    screen.blit(kill, kill_btn)
+            crew.update(orient)
+            crew.draw(screen)
             walls.get_rect().center = (x, y)
         if loading:
             screen.blit(loading, (0, 680))
@@ -312,27 +390,31 @@ def settings():
     tk.Label(master, text="Among Ys Settings").grid(row=0)
     tk.Label(master, text="Your name").grid(row=1, column=0)
     tk.Label(master, text="Your color").grid(row=2, column=0)
+    tk.Label(master, text="Multiplayer?").grid(row=3, column=0)
     variable = tk.StringVar(master)
     variable.set("Red")
     entry_text = tk.StringVar()
+    mp = tk.IntVar()
     e1 = tk.Entry(master, textvariable = entry_text)
     e2 = tk.OptionMenu(master, variable, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
               "Tan", "Coral", "Olive", "Fortegreen")
+    e3 = tk.Checkbutton(master, variable=mp)
     e1.grid(row=1, column=1)
     e2.grid(row=2, column=1)
+    e3.grid(row=3, column=1)    
     tk.Button(master, 
           text='Start',
           width=15,
-          command=master.quit).grid(row=3, column=1)
+          command=master.quit).grid(row=4, column=1)
     tk.Button(master, 
           text='Quit',
           width=15,
-          command=master.destroy).grid(row=3, column=0)
+          command=master.destroy).grid(row=4, column=0)
     logging.info('Done! Waiting for input...')
     entry_text.trace("w", lambda *args: character_limit(entry_text))
     tk.mainloop()
     logging.info('Got input! Closing settings...')
-    return entry_text.get(), master, variable.get()
+    return master, entry_text.get(), variable.get(), mp.get()
 
 if __name__ == "__main__":
     try:
@@ -342,11 +424,11 @@ if __name__ == "__main__":
     logging.basicConfig(filename='log.txt', encoding='utf-8', level=logging.INFO)
     try:
         logging.info('Loading settings window...')
-        a, b, c = settings()
+        master, a, b, c = settings()
         logging.info('Destorying window...')
-        b.destroy()
+        master.destroy()
         logging.info('Starting game...')
-        main(a, c)
+        main(a, b, c)
     except Exception as e:
         logging.warning('Got error! Analysing...')
         if e == "can't invoke \"destroy\" command: application has been destroyed":
