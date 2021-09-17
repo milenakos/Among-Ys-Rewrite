@@ -1,7 +1,6 @@
 pyinstaller --onefile server.py
-move dist\main.exe .
-ren "main.exe" "Server.exe"
-del main.spec
+move dist\server.exe .
+del server.spec
 rmdir build /S /Q
 rmdir __pycache__ /S /Q
 rmdir dist
