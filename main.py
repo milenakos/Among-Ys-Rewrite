@@ -181,10 +181,12 @@ def main(player_name, player_color, is_multiplayer):
                 if event.button == 1 and kill_btn.collidepoint(event.pos):
                     logging.info("Got mouse press signal.")
                     do_kill = True
-            elif event.type == pygame.KEYDOWN and not is_multiplayer:
-                if event.key == pygame.K_q:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q and not is_multiplayer:
                     logging.info("Got Q press signal.")
                     do_kill = True
+                if event.key == pygame.K_O:
+                    os.system("start \"\" https://youtube.com/watch?v=dQw4w9WgXcQ")
 
         if ticks != 1:
             if do_kill and kill_possible and not is_multiplayer:
