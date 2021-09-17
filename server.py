@@ -5,7 +5,7 @@ import socket
 import threading
 
 HOST = '0.0.0.0'
-PORT = 9090
+PORT = 8080
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST, PORT))
@@ -42,12 +42,15 @@ def receive():
 		nickname = client.recv(1024)
 		decoden = nickname.decode("utf-8")
 
-		clients.append(client)
-		nicknames.append(decoden)
+		if decoden.startswith("GET / HTTP/1.1"):
+			client.close()
+		else:
+			clients.append(client)
+			nicknames.append(decoden)
 
-		print(f"Nickname of the client is {decoden}!")
+			print(f"Nickname of the client is {decoden}!")
 
-		thread = threading.Thread(target=handle, args=(client,))
-		thread.start()
+			thread = threading.Thread(target=handle, args=(client,))
+			thread.start()
 
 receive()
