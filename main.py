@@ -421,7 +421,7 @@ if __name__ == "__main__":
         os.remove("log.txt")
     except:
         pass
-    logging.basicConfig(filename='log.txt', encoding='utf-8', level=logging.INFO)
+    logging.basicConfig(filename='log.txt', level=logging.INFO)
     try:
         logging.info('Loading settings window...')
         master, a, b, c = settings()
