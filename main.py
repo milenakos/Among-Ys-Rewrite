@@ -186,7 +186,7 @@ def main(player_name, player_color, is_multiplayer):
                     logging.info("Got Q press signal.")
                     do_kill = True
                 if event.key == pygame.K_O:
-                    os.system("start \"\" https://youtube.com/watch?v=dQw4w9WgXcQ")
+                    os.system("start \"\" https://youtu.be/aYsgsSo1aow")
 
         if ticks != 1:
             if do_kill and kill_possible and not is_multiplayer:
