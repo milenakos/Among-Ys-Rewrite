@@ -331,8 +331,8 @@ def main(player_name, player_color, is_multiplayer):
             logging.info("Loading text...")
             loading = font.render("Loading text...", 1, (255, 255, 255))
         elif ticks == 4:
-            HOST = '127.0.0.1' # server public ip
-            PORT = 9090
+            HOST = 'amongysserver.herokuapp.com' # server public ip
+            PORT = 8080
 
             client = Client(HOST, PORT, player_name)
         elif ticks == 5 and not is_multiplayer:
