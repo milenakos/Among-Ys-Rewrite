@@ -152,7 +152,7 @@ def main(player_name, player_color, is_multiplayer):
 
     logging.info("Creating game window...")
     screen = pygame.display.set_mode((1280, 720))
-    pygame.display.set_caption("Among Ys Rewrite Beta")
+    pygame.display.set_caption("Among Ys Rewrite")
     clock = pygame.time.Clock()
     all_sprites = pygame.sprite.Group()
 
@@ -185,7 +185,7 @@ def main(player_name, player_color, is_multiplayer):
                 if event.key == pygame.K_q and not is_multiplayer:
                     logging.info("Got Q press signal.")
                     do_kill = True
-                if event.key == pygame.K_O:
+                if event.key == pygame.K_o:
                     os.system("start \"\" https://youtu.be/aYsgsSo1aow")
 
         if ticks != 1:
