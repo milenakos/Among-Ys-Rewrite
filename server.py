@@ -13,7 +13,6 @@ server.bind((HOST, PORT))
 server.listen()
 
 clients = []
-nicknames = []
 
 def broadcast(message):
 	for client in clients: 
@@ -22,15 +21,12 @@ def broadcast(message):
 def handle(client):
 	while True:
 		try:
-			message = client.recv(1024)
+			message = client.recv(4096)
 			broadcast(message)
 		except:
 			index = clients.index(client)
 			clients.remove(client)
 			client.close()
-			nickname = nicknames[index]
-			print(f"User {nickname} left!")
-			nicknames.remove(nickname)
 			break
 
 def receive():
@@ -38,19 +34,9 @@ def receive():
 		client, address = server.accept()
 		print(f"Connected with {str(address)}!")
 
-		client.send("NICK".encode("utf-8"))
-		nickname = client.recv(1024)
-		decoden = nickname.decode("utf-8")
+		clients.append(client)
 
-		if decoden.startswith("GET / HTTP/1.1"):
-			client.close()
-		else:
-			clients.append(client)
-			nicknames.append(decoden)
-
-			print(f"Nickname of the client is {decoden}!")
-
-			thread = threading.Thread(target=handle, args=(client,))
-			thread.start()
+		thread = threading.Thread(target=handle, args=(client,))
+		thread.start()
 
 receive()

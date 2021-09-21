@@ -1,9 +1,8 @@
-import random, math, os, pygame, requests, json, sys, logging, socket, threading
+import random, math, os, pygame, requests, sys, logging, socket, threading, json, pickle
 import tkinter as tk
 
 class Client:
-    def __init__(self, host, port, nickname):
-        self.nickname = nickname
+    def __init__(self, host, port):
         self.info = None
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,19 +13,15 @@ class Client:
 
     def receive(self):
         while True:
-            message = self.sock.recv(1024).decode("utf-8")
-            if message == 'NICK':
-                self.sock.send(self.nickname.encode("utf-8"))
-                self.info = True
-            elif message:
+            message = self.sock.recv(4096)
+            if message:
                 try:
-                    self.info = eval(message) # weak line.
+                    self.info = pickle.loads(message)
                 except Exception as e:
                     print(e)
 
     def write(self, data):
-        message = "[\"" + self.nickname + "\", " + data + "]"
-        self.sock.send(message.encode('utf-8'))
+        self.sock.send(pickle.dumps(data))
 
     def close(self):
         self.sock.close()
@@ -185,8 +180,6 @@ def main(player_name, player_color, is_multiplayer):
                 if event.key == pygame.K_q and not is_multiplayer:
                     logging.info("Got Q press signal.")
                     do_kill = True
-                if event.key == pygame.K_o:
-                    os.system("start \"\" https://youtu.be/aYsgsSo1aow")
 
         if ticks != 1:
             if do_kill and kill_possible and not is_multiplayer:
@@ -284,8 +277,8 @@ def main(player_name, player_color, is_multiplayer):
                             new = Crew(info[4], info[0])
                             players.append(new)
                             new.update(info[3], info[1], info[2])
-                    if new_x != 0 or new_y != 0:
-                        client.write(str(x) + ", " + str(y) + ", \"" + orient + "\", \"" + player_color + "\"")
+                if new_x != 0 or new_y != 0:
+                    client.write([player_name, x, y, orient, player_color])
 
             if do_write and not is_multiplayer:
                 moves.append([x, y, orient])
@@ -333,10 +326,9 @@ def main(player_name, player_color, is_multiplayer):
             logging.info("Loading text...")
             loading = font.render("Loading text...", 1, (255, 255, 255))
         elif ticks == 4:
-            HOST = '127.0.0.1' # server public ip
-            PORT = 9090
+            HOST, PORT = is_multiplayer.split(":")
 
-            client = Client(HOST, PORT, player_name)
+            client = Client(HOST, int(PORT))
         elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
             font1 = pygame.font.Font("arlrdbd.ttf", 35)
@@ -379,6 +371,7 @@ def main(player_name, player_color, is_multiplayer):
 
     logging.info("Quitting pygame...")
     pygame.quit()
+    client.close()
 
 def character_limit(entry_text):
     if len(entry_text.get()) > 15:
@@ -392,15 +385,16 @@ def settings():
     tk.Label(master, text="Among Ys Settings").grid(row=0)
     tk.Label(master, text="Your name").grid(row=1, column=0)
     tk.Label(master, text="Your color").grid(row=2, column=0)
-    tk.Label(master, text="Multiplayer?").grid(row=3, column=0)
+    tk.Label(master, text="Multiplayer IP").grid(row=3, column=0)
     variable = tk.StringVar(master)
     variable.set("Red")
     entry_text = tk.StringVar()
+    ip = tk.StringVar()
     mp = tk.IntVar()
     e1 = tk.Entry(master, textvariable = entry_text)
     e2 = tk.OptionMenu(master, variable, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
               "Tan", "Coral", "Olive", "Fortegreen")
-    e3 = tk.Checkbutton(master, variable=mp)
+    e3 = tk.Entry(master, textvariable = ip)
     e1.grid(row=1, column=1)
     e2.grid(row=2, column=1)
     e3.grid(row=3, column=1)    
@@ -416,7 +410,7 @@ def settings():
     entry_text.trace("w", lambda *args: character_limit(entry_text))
     tk.mainloop()
     logging.info('Got input! Closing settings...')
-    return master, entry_text.get(), variable.get(), mp.get()
+    return master, entry_text.get(), variable.get(), ip.get()
 
 if __name__ == "__main__":
     try:
@@ -424,16 +418,19 @@ if __name__ == "__main__":
     except:
         pass
     logging.basicConfig(filename='log.txt', level=logging.INFO)
-    try:
-        logging.info('Loading settings window...')
-        master, a, b, c = settings()
-        logging.info('Destorying window...')
-        master.destroy()
-        logging.info('Starting game...')
-        main(a, b, c)
+    # try:
+    logging.info('Loading settings window...')
+    master, a, b, c = settings()
+    logging.info('Destorying window...')
+    master.destroy()
+    logging.info('Starting game...')
+    main(a, b, c)
+    '''
     except Exception as e:
         logging.warning('Got error! Analysing...')
         if e == "can't invoke \"destroy\" command: application has been destroyed":
             logging.info("Aplication exit by user, no errors.")
         else:
             logging.fatal(e)
+            pygame.quit()
+    '''
