@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, sys, logging, socket, threading, json, pickle, ast
+import random, math, os, pygame, requests, sys, logging, socket, threading, json, ast
 import tkinter as tk
 
 class Client:
@@ -16,12 +16,12 @@ class Client:
             message = self.sock.recv(4096)
             if message:
                 try:
-                    self.info = pickle.loads(message)
+                    self.info = json.loads(message)
                 except Exception as e:
                     print(e)
 
     def write(self, data):
-        self.sock.send(pickle.dumps(data))
+        self.sock.send(json.dumps(data).encode('utf-8'))
 
     def close(self):
         self.sock.close()
@@ -136,7 +136,7 @@ def ping_pong(do_ping_pong):
         new_x += change
     return new_x, new_y
 
-def main(player_name, player_color, is_multiplayer):
+def main(player_name, player_color, is_multiplayer, d):
     v = "v2.2.0"
     loading = False
 
@@ -342,11 +342,13 @@ def main(player_name, player_color, is_multiplayer):
             image.blit(textSurf, [0, 0])
             image.set_colorkey((0,0,0))
         if ticks == 5:
-            if version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            log_text = ""
+            if d == True:
+                log_text += "Failed to start logging.\n"
+            elif version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
-                loading = font.render("New version of Among Ys Rewrite is available. Please upgrade your game.", 1, (255, 255, 255))
-            else:
-                loading = False
+                log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
+            loading = font.render(log_text, 1, (255, 255, 255))
 
         screen.fill((0, 0, 0))
         
@@ -419,19 +421,22 @@ def settings():
     return master, entry_text.get(), variable.get(), ip.get()
 
 if __name__ == "__main__":
+    d = False
     try:
         os.remove("log.txt")
         logging.basicConfig(filename='log.txt', level=logging.INFO)
     except FileNotFoundError:
         logging.basicConfig(filename='log.txt', level=logging.INFO)
         logging.warning('Failed to delete log file!')
+    except PermissionError:
+        d = True
     try:
         logging.info('Loading settings window...')
         master, a, b, c = settings()
         logging.info('Destorying window...')
         master.destroy()
         logging.info('Starting game...')
-        main(a, b, c)
+        main(a, b, c, d)
     except Exception as e:
         logging.warning('Got error! Analysing...')
         if e == "can't invoke \"destroy\" command: application has been destroyed":
