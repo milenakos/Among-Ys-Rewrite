@@ -207,19 +207,166 @@ def main(player_name, player_color, is_multiplayer, d):
                     logging.info("Got Q press signal.")
                     do_kill = True
 
-        x, y, kill_possible, ping, do_ping_pong, orient, image = tick_routine(ticks,
-            do_kill, kill_possible, is_multiplayer, bots, kill_save, font, x, y,
-            do_ping_pong, change, ping, orient, client, player_name, player_color,
-            players, do_write, moves, walls_mask, hitbox_mask)
+        if ticks != 1:
+            if do_kill and kill_possible and not is_multiplayer:
+                logging.info("Killing...")
+                dists = []
+                for i in bots:
+                    dists.append(i.distance_from_center())
+                if min(dists) <= 270 and ticks - kill_save > 120:
+                    enemy_ind = dists.index(min(dists))
+                    enemy = bots[enemy_ind]
+                    x, y = enemy.get_coords()
+                    logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
+                    bots.pop(enemy_ind)
+                    kill_save = ticks
+                    logging.info("%s people left, rendering counter.", str(len(bots) + 1))
+                    textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+                    image = pygame.Surface((1280, 720))
+                    image.blit(textSurf, [0, 0])
+                    image.set_colorkey((0,0,0))
+                else:
+                    logging.info("No bots in kill distance or kill cooldown is active.")
+                do_kill = False
+                if len(bots) == 0:
+                    logging.info("All bots killed.")
+                    kill_possible = False
 
-        back, image, kill, kill_btn, crew, walls, loading, client = loading(ticks,
-            font, player_color, player_name, is_multiplayer, do_write, colors, names,
-            bots, d, v, kill_btn, client, image)
+            keys = pygame.key.get_pressed()
+
+            x_save, y_save = x, y
+               
+            new_x = new_y = 0
+
+            if do_ping_pong:
+                new_x, new_y = ping_pong(do_ping_pong)
+            else:
+                if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+                    new_x += change
+                if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+                    new_x -= change
+
+                if keys[pygame.K_w] or keys[pygame.K_UP]:
+                    new_y += change
+                if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+                    new_y -= change
+
+            if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
+                logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
+                ping = ticks
+                if do_ping_pong:
+                    do_ping_pong = False
+                else:
+                    do_ping_pong = True
+
+            if new_x > 0:
+                orient = "Left"
+            elif new_x < 0:
+                orient = "Right"
+
+            x += new_x
+            y += new_y
+            
+            if ticks > 4 and is_multiplayer:
+                info = client.get()
+                if info != None:
+                    print(info)
+                    if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
+                        found = False
+                        for j in players:
+                            if info[0] == j.nickname and info[4] == j.color:
+                                j.update(info[3], info[1], info[2])
+                                found = True
+                                break
+                        if not found:
+                            new = Crew(info[4], info[0])
+                            players.append(new)
+                            new.update(info[3], info[1], info[2])
+                if new_x != 0 or new_y != 0:
+                    client.write([player_name, x, y, orient, player_color])
+
+            if do_write and not is_multiplayer:
+                moves.append([x, y, orient])
+
+            if walls_mask.overlap(hitbox_mask, (-x, -y)):
+                x, y = x_save, y_save
+                if do_ping_pong:
+                    old_super = do_ping_pong
+                    while do_ping_pong == old_super:
+                        do_ping_pong = random.randint(1, 8)
+                    logging.info("New ping pong direction, %s.", do_ping_pong)
+
+        if ticks == 1:
+            logging.info("Loading images...")
+            walls = pygame.image.load("img/layout.png")
+            walls_mask = pygame.mask.from_surface(walls)
+
+            hitbox = pygame.image.load("img/hitbox.png")
+            hitbox_mask = pygame.mask.from_surface(hitbox)
+
+            kill = pygame.image.load("img/kill.png")
+            kill_btn = kill.get_rect()
+            kill_btn.center = (1200, 640)
+            logging.info("Checking for updates...")
+            loading = font.render("Checking for updates...", 1, (255, 255, 255))
+        if ticks == 2:
+            latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
+            version = json.loads(latest)["name"]
+            logging.info("Loading map...")
+            loading = font.render("Loading map...", 1, (255, 255, 255))
+        elif ticks == 3:
+            back = pygame.image.load('img/skeld.png')
+            crew = Crew(player_color, player_name)
+            if is_multiplayer:
+                logging.info("Connecting to server...")
+                loading = font.render("Connecting to server...", 1, (255, 255, 255))
+            else:
+                logging.info("Loading bots...")
+                loading = font.render("Loading bots...", 1, (255, 255, 255))
+        elif ticks == 4 and not is_multiplayer:
+            if not do_write:
+                for i in range(0, len(os.listdir(".\\moves"))):
+                    bot = Bot(i, colors, names, ticks)
+                    bots.append(bot)
+            logging.info("Loading text...")
+            loading = font.render("Loading text...", 1, (255, 255, 255))
+        elif ticks == 4:
+            HOST, PORT = is_multiplayer.split(":")
+
+            client = Client(HOST, int(PORT))
+        elif ticks == 5 and not is_multiplayer:
+            logging.info("Rendering counter...")
+            font1 = pygame.font.Font("arlrdbd.ttf", 35)
+            textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+            image = pygame.Surface((1280, 720))
+            image.blit(textSurf, [0, 0])
+            image.set_colorkey((0,0,0))
+        if ticks == 5:
+            log_text = ""
+            if d == True:
+                log_text += "Failed to start logging.\n"
+            elif version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                logging.warning("Using old version of Among Ys Rewrite.")
+                log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
+            loading = font.render(log_text, 1, (255, 255, 255))
 
         screen.fill((0, 0, 0))
         
-        draw_on_screen(ticks, screen, back, x, y, bots, orient, players, is_multiplayer,
-            image, kill_possible, kill, kill_btn, crew, walls, loading)
+        if ticks > 4:
+            screen.blit(back, (x, y))
+            for i in bots:
+                i.update(x, y, screen, orient)
+            for i in players:
+                i.draw(screen, x, y)
+            if not is_multiplayer:
+                screen.blit(image, (0, 0))
+                if kill_possible:
+                    screen.blit(kill, kill_btn)
+            crew.update(orient)
+            crew.draw(screen)
+            walls.get_rect().center = (x, y)
+        if loading:
+            screen.blit(loading, (0, 680))
         
         all_sprites.update(x, y, screen, orient)
         pygame.display.flip()
@@ -233,183 +380,6 @@ def main(player_name, player_color, is_multiplayer, d):
     pygame.quit()
     if is_multiplayer:
         client.close()
-
-def tick_routine(ticks, do_kill, kill_possible, is_multiplayer, bots, kill_save, font, x, y, do_ping_pong, change, ping, orient, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask):
-    if ticks != 1:
-        x, y, image, kill_possible = check_for_kill(do_kill, kill_possible,
-            is_multiplayer, bots, ticks, kill_save, font, x, y)
-
-        ping, do_ping_pong, x, y, new_x, new_y, orient, x_save, y_save = movement_code(x,
-            y, do_ping_pong, change, ticks, ping, is_multiplayer, orient)
-
-        if ticks > 4 and is_multiplayer:
-            multiplayer_tick(client, player_name, player_color, players, new_x, new_y, x, y, orient)
-
-        if do_write and not is_multiplayer:
-            moves.append([x, y, orient])
-
-        if walls_mask.overlap(hitbox_mask, (-x, -y)):
-            x, y = x_save, y_save
-            if do_ping_pong:
-                old_super = do_ping_pong
-                while do_ping_pong == old_super:
-                    do_ping_pong = random.randint(1, 8)
-                logging.info("New ping pong direction, %s.", do_ping_pong)
-    return x, y, kill_possible, ping, do_ping_pong, orient, image
-
-def movement_code(x, y, do_ping_pong, change, ticks, ping, is_multiplayer, orient):
-    keys = pygame.key.get_pressed()
-
-    x_save, y_save = x, y
-
-    new_x = new_y = 0
-
-    if do_ping_pong:
-        new_x, new_y = ping_pong(do_ping_pong)
-    else:
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            new_x += change
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            new_x -= change
-
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            new_y += change
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            new_y -= change
-
-    if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
-        logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
-        ping = ticks
-        if do_ping_pong:
-            do_ping_pong = False
-        else:
-            do_ping_pong = True
-
-    if new_x > 0:
-        orient = "Left"
-    elif new_x < 0:
-        orient = "Right"
-
-    x += new_x
-    y += new_y
-    return ping, do_ping_pong, x, y, new_x, new_y, orient, x_save, y_save
-
-def check_for_kill(do_kill, kill_possible, is_multiplayer, bots, ticks, kill_save, font, x, y):
-    if do_kill and kill_possible and not is_multiplayer:
-        logging.info("Killing...")
-        dists = []
-        for i in bots:
-            dists.append(i.distance_from_center())
-        if min(dists) <= 270 and ticks - kill_save > 120:
-            enemy_ind = dists.index(min(dists))
-            enemy = bots[enemy_ind]
-            x, y = enemy.get_coords()
-            logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
-            bots.pop(enemy_ind)
-            kill_save = ticks
-            logging.info("%s people left, rendering counter.", str(len(bots) + 1))
-            textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
-            image = pygame.Surface((1280, 720))
-            image.blit(textSurf, [0, 0])
-            image.set_colorkey((0,0,0))
-        else:
-            logging.info("No bots in kill distance or kill cooldown is active.")
-        do_kill = False
-        if len(bots) == 0:
-            logging.info("All bots killed.")
-            kill_possible = False
-    return x, y, image, kill_possible
-
-def multiplayer_tick(client, player_name, player_color, players, new_x, new_y, x, y, orient):
-    info = client.get()
-    if info != None:
-        print(info)
-        if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
-            found = False
-            for j in players:
-                if info[0] == j.nickname and info[4] == j.color:
-                    j.update(info[3], info[1], info[2])
-                    found = True
-                    break
-            if not found:
-                new = Crew(info[4], info[0])
-                players.append(new)
-                new.update(info[3], info[1], info[2])
-    if new_x != 0 or new_y != 0:
-        client.write([player_name, x, y, orient, player_color])
-
-def draw_on_screen(ticks, screen, back, x, y, bots, orient, players, is_multiplayer, image, kill_possible, kill, kill_btn, crew, walls, loading):
-    if ticks > 4:
-        screen.blit(back, (x, y))
-        for i in bots:
-            i.update(x, y, screen, orient)
-        for i in players:
-            i.draw(screen, x, y)
-        if not is_multiplayer:
-            screen.blit(image, (0, 0))
-            if kill_possible:
-                screen.blit(kill, kill_btn)
-        crew.update(orient)
-        crew.draw(screen)
-        walls.get_rect().center = (x, y)
-    if loading:
-        screen.blit(loading, (0, 680))
-
-def loading(ticks, font, player_color, player_name, is_multiplayer, do_write, colors, names, bots, d, v, kill_btn, client, image):
-    if ticks == 1:
-        logging.info("Loading images...")
-        walls = pygame.image.load("img/layout.png")
-        walls_mask = pygame.mask.from_surface(walls)
-
-        hitbox = pygame.image.load("img/hitbox.png")
-        hitbox_mask = pygame.mask.from_surface(hitbox)
-
-        kill = pygame.image.load("img/kill.png")
-        kill_btn = kill.get_rect()
-        kill_btn.center = (1200, 640)
-        logging.info("Checking for updates...")
-        loading = font.render("Checking for updates...", 1, (255, 255, 255))
-    if ticks == 2:
-        latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
-        version = json.loads(latest)["name"]
-        logging.info("Loading map...")
-        loading = font.render("Loading map...", 1, (255, 255, 255))
-    elif ticks == 3:
-        back = pygame.image.load('img/skeld.png')
-        crew = Crew(player_color, player_name)
-        if is_multiplayer:
-            logging.info("Connecting to server...")
-            loading = font.render("Connecting to server...", 1, (255, 255, 255))
-        else:
-            logging.info("Loading bots...")
-            loading = font.render("Loading bots...", 1, (255, 255, 255))
-    elif ticks == 4 and not is_multiplayer:
-        if not do_write:
-            for i in range(0, len(os.listdir(".\\moves"))):
-                bot = Bot(i, colors, names, ticks)
-                bots.append(bot)
-        logging.info("Loading text...")
-        loading = font.render("Loading text...", 1, (255, 255, 255))
-    elif ticks == 4:
-        HOST, PORT = is_multiplayer.split(":")
-
-        client = Client(HOST, int(PORT))
-    elif ticks == 5 and not is_multiplayer:
-        logging.info("Rendering counter...")
-        font1 = pygame.font.Font("arlrdbd.ttf", 35)
-        textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
-        image = pygame.Surface((1280, 720))
-        image.blit(textSurf, [0, 0])
-        image.set_colorkey((0,0,0))
-    if ticks == 5:
-        log_text = ""
-        if d == True:
-            log_text += "Failed to start logging.\n"
-        elif version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-            logging.warning("Using old version of Among Ys Rewrite.")
-            log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
-        loading = font.render(log_text, 1, (255, 255, 255))
-    return back, image, kill, kill_btn, crew, walls, loading, client
 
 def character_limit(entry_text):
     if len(entry_text.get()) > 15:
