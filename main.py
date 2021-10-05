@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, sys, logging, socket, threading, json, pickle
+import random, math, os, pygame, requests, sys, logging, socket, threading, json, pickle, ast
 import tkinter as tk
 
 class Client:
@@ -86,7 +86,7 @@ class Bot(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (74, 99))
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
-        self.moves = eval(open("moves\\file" + str(idd) + ".txt", "r").read())
+        self.moves = ast.literal_eval(open("moves\\file" + str(idd) + ".txt", "r").read())
         self.future_name = random.randint(0, len(names) - 1)
         self.my_name = names[self.future_name]
         self.name = Name(self.my_name)
@@ -111,6 +111,31 @@ class Bot(pygame.sprite.Sprite):
     def get_coords(self):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
+def ping_pong(do_ping_pong):
+    if do_ping_pong == True:
+        do_ping_pong = random.randint(1, 8)
+    if do_ping_pong == 1:
+        new_x += change
+    elif do_ping_pong == 2:
+        new_x -= change
+    elif do_ping_pong == 3:
+        new_y += change
+    elif do_ping_pong == 4:
+        new_y -= change
+    elif do_ping_pong == 5:
+        new_y -= change
+        new_x -= change
+    elif do_ping_pong == 6:
+        new_y -= change
+        new_x += change
+    elif do_ping_pong == 7:
+        new_y += change
+        new_x -= change
+    elif do_ping_pong == 8:
+        new_y += change
+        new_x += change
+    return new_x, new_y
+
 def main(player_name, player_color, is_multiplayer):
     v = "v2.2.0"
     loading = False
@@ -121,6 +146,7 @@ def main(player_name, player_color, is_multiplayer):
     pygame.font.init()
 
     logging.info("Loading variables...")
+    client, walls_mask, hitbox_mask, kill_btn = 0, 0, 0, 0
     do_kill = False
     do_write = False
     do_ping_pong = False
@@ -213,28 +239,7 @@ def main(player_name, player_color, is_multiplayer):
             new_x = new_y = 0
 
             if do_ping_pong:
-                if do_ping_pong == True:
-                    do_ping_pong = random.randint(1, 8)
-                if do_ping_pong == 1:
-                    new_x += change
-                elif do_ping_pong == 2:
-                    new_x -= change
-                elif do_ping_pong == 3:
-                    new_y += change
-                elif do_ping_pong == 4:
-                    new_y -= change
-                elif do_ping_pong == 5:
-                    new_y -= change
-                    new_x -= change
-                elif do_ping_pong == 6:
-                    new_y -= change
-                    new_x += change
-                elif do_ping_pong == 7:
-                    new_y += change
-                    new_x -= change
-                elif do_ping_pong == 8:
-                    new_y += change
-                    new_x += change
+                new_x, new_y = ping_pong(do_ping_pong)
             else:
                 if keys[pygame.K_a] or keys[pygame.K_LEFT]:
                     new_x += change
@@ -371,7 +376,8 @@ def main(player_name, player_color, is_multiplayer):
 
     logging.info("Quitting pygame...")
     pygame.quit()
-    client.close()
+    if is_multiplayer:
+        client.close()
 
 def character_limit(entry_text):
     if len(entry_text.get()) > 15:
@@ -415,17 +421,17 @@ def settings():
 if __name__ == "__main__":
     try:
         os.remove("log.txt")
-    except:
-        pass
-    logging.basicConfig(filename='log.txt', level=logging.INFO)
-    # try:
-    logging.info('Loading settings window...')
-    master, a, b, c = settings()
-    logging.info('Destorying window...')
-    master.destroy()
-    logging.info('Starting game...')
-    main(a, b, c)
-    '''
+        logging.basicConfig(filename='log.txt', level=logging.INFO)
+    except FileNotFoundError:
+        logging.basicConfig(filename='log.txt', level=logging.INFO)
+        logging.warning('Failed to delete log file!')
+    try:
+        logging.info('Loading settings window...')
+        master, a, b, c = settings()
+        logging.info('Destorying window...')
+        master.destroy()
+        logging.info('Starting game...')
+        main(a, b, c)
     except Exception as e:
         logging.warning('Got error! Analysing...')
         if e == "can't invoke \"destroy\" command: application has been destroyed":
@@ -433,4 +439,3 @@ if __name__ == "__main__":
         else:
             logging.fatal(e)
             pygame.quit()
-    '''

@@ -23,7 +23,7 @@ def handle(client):
 		try:
 			message = client.recv(4096)
 			broadcast(message)
-		except:
+		except ConnectionResetError:
 			index = clients.index(client)
 			clients.remove(client)
 			client.close()
