@@ -334,6 +334,7 @@ def main(player_name, player_color, is_multiplayer, d):
             HOST, PORT = is_multiplayer.split(":")
 
             client = Client(HOST, int(PORT))
+            client.write([player_name, x, y, orient, player_color])
         elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
             font1 = pygame.font.Font("arlrdbd.ttf", 35)
