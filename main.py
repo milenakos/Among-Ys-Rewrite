@@ -310,8 +310,12 @@ def main(player_name, player_color, is_multiplayer, d):
             logging.info("Checking for updates...")
             loading = font.render("Checking for updates...", 1, (255, 255, 255))
         if ticks == 2:
-            latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
-            version = json.loads(latest)["name"]
+            try:
+                latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
+                version = json.loads(latest)["name"]
+            except Exception as e:
+                logging.warning("Failed to check version.")
+                version = None
             logging.info("Loading map...")
             loading = font.render("Loading map...", 1, (255, 255, 255))
         elif ticks == 3:
@@ -346,7 +350,7 @@ def main(player_name, player_color, is_multiplayer, d):
             log_text = ""
             if d == True:
                 log_text += "Failed to start logging.\n"
-            elif version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            elif version and version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
                 log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
             loading = font.render(log_text, 1, (255, 255, 255))
