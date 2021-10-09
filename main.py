@@ -282,8 +282,7 @@ def main(player_name, player_color, is_multiplayer, d):
                             new = Crew(info[4], info[0])
                             players.append(new)
                             new.update(info[3], info[1], info[2])
-                if new_x != 0 or new_y != 0:
-                    client.write([player_name, x, y, orient, player_color])
+                client.write([player_name, x, y, orient, player_color])
 
             if do_write and not is_multiplayer:
                 moves.append([x, y, orient])
@@ -338,7 +337,6 @@ def main(player_name, player_color, is_multiplayer, d):
             HOST, PORT = is_multiplayer.split(":")
 
             client = Client(HOST, int(PORT))
-            client.write([player_name, x, y, orient, player_color])
         elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
             font1 = pygame.font.Font("arlrdbd.ttf", 35)
