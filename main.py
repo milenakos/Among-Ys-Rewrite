@@ -30,11 +30,15 @@ class Client:
         return self.info
 
 class Name(pygame.sprite.Sprite):
-    def __init__(self, name):
+    def __init__(self, name, is_sus):
+        if is_sus:
+            color = 0
+        else:
+            color = 255
         self.name = name
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font("arlrdbd.ttf", 35)
-        self.textSurf = self.font.render(name, 1, (255, 255, 255))
+        self.textSurf = self.font.render(name, 1, (255, color, color))
         self.image = pygame.Surface((1280, 720))
         W = self.textSurf.get_width()
         H = self.textSurf.get_height()
@@ -62,7 +66,7 @@ class Crew(pygame.sprite.Sprite):
 
         self.color = colors
         self.nickname = name
-        self.name = Name(name)
+        self.name = Name(name, True)
 
     def update(self, orient, *args):
         self.orient = orient
@@ -89,7 +93,7 @@ class Bot(pygame.sprite.Sprite):
         self.moves = ast.literal_eval(open("moves\\file" + str(idd) + ".txt", "r").read())
         self.future_name = random.randint(0, len(names) - 1)
         self.my_name = names[self.future_name]
-        self.name = Name(self.my_name)
+        self.name = Name(self.my_name, False)
         names.pop(self.future_name)
         self.ticks = ticks
 
