@@ -1,5 +1,7 @@
 # Among Ys Rewrite
 
+[![CodeFactor](https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite/badge)](https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite)
+
 Python Among Us spin-off.
 Learn more:
 https://among-ys.glitch.me
