@@ -24,8 +24,7 @@ def handle(client):
 			message = client.recv(4096)
 			broadcast(message)
 		except ConnectionResetError:
-			index = clients.index(client)
-			clients.remove(client)
+			clients.pop(index)
 			client.close()
 			break
 
