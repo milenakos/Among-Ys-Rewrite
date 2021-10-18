@@ -267,9 +267,9 @@ def main(player_name, player_color, is_multiplayer, d):
             logging.info("Rendering counter...")
             font1 = pygame.font.Font("arlrdbd.ttf", 35)
             textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
-            image = pygame.Surface((1280, 720))
-            image.blit(textSurf, [0, 0])
-            image.set_colorkey((0,0,0))
+            counter = pygame.Surface((1280, 720))
+            counter.blit(textSurf, [0, 0])
+            counter.set_colorkey((0,0,0))
         if ticks == 5:
             log_text = ""
             if d == True:
@@ -288,7 +288,7 @@ def main(player_name, player_color, is_multiplayer, d):
             for i in players:
                 i.draw(screen, x, y)
             if not is_multiplayer:
-                screen.blit(image, (0, 0))
+                screen.blit(counter, (0, 0))
                 if kill_possible:
                     screen.blit(kill, kill_btn)
             crew.update(orient)
