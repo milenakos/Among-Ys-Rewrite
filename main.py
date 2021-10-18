@@ -198,106 +198,26 @@ def main(player_name, player_color, is_multiplayer, d):
         clock.tick(FPS)
         ticks += 1
         
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                logging.info("Got exit signal.")
-                running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN and not is_multiplayer:
-                if event.button == 1 and kill_btn.collidepoint(event.pos):
-                    logging.info("Got mouse press signal.")
-                    do_kill = True
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q and not is_multiplayer:
-                    logging.info("Got Q press signal.")
-                    do_kill = True
+        do_kill, running = check_for_input(is_multiplayer, kill_btn, running)
 
         if ticks != 1:
             if do_kill and kill_possible and not is_multiplayer:
-                logging.info("Killing...")
-                dists = []
-                for i in bots:
-                    dists.append(i.distance_from_center())
-                if min(dists) <= 270 and ticks - kill_save > 120:
-                    enemy_ind = dists.index(min(dists))
-                    enemy = bots[enemy_ind]
-                    x, y = enemy.get_coords()
-                    logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
-                    bots.pop(enemy_ind)
-                    kill_save = ticks
-                    logging.info("%s people left, rendering counter.", str(len(bots) + 1))
-                    textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
-                    image = pygame.Surface((1280, 720))
-                    image.blit(textSurf, [0, 0])
-                    image.set_colorkey((0,0,0))
-                else:
-                    logging.info("No bots in kill distance or kill cooldown is active.")
-                do_kill = False
-                if len(bots) == 0:
-                    logging.info("All bots killed.")
-                    kill_possible = False
+                x, y, kill_possible, counter = kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter)
 
-            keys = pygame.key.get_pressed()
+            ping, do_ping_pong, new_x, new_y, orient = do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient)
 
             x_save, y_save = x, y
-               
-            new_x = new_y = 0
-
-            if do_ping_pong:
-                new_x, new_y = ping_pong(do_ping_pong)
-            else:
-                if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                    new_x += change
-                if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                    new_x -= change
-
-                if keys[pygame.K_w] or keys[pygame.K_UP]:
-                    new_y += change
-                if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                    new_y -= change
-
-            if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
-                logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
-                ping = ticks
-                if do_ping_pong:
-                    do_ping_pong = False
-                else:
-                    do_ping_pong = True
-
-            if new_x > 0:
-                orient = "Left"
-            elif new_x < 0:
-                orient = "Right"
 
             x += new_x
             y += new_y
             
             if ticks > 4 and is_multiplayer:
-                info = client.get()
-                if info != None:
-                    print(info)
-                    if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
-                        found = False
-                        for j in players:
-                            if info[0] == j.nickname and info[4] == j.color:
-                                j.update(info[3], info[1], info[2])
-                                found = True
-                                break
-                        if not found:
-                            new = Crew(info[4], info[0])
-                            players.append(new)
-                            new.update(info[3], info[1], info[2])
-                client.write([player_name, x, y, orient, player_color])
+                update_multiplayer(client, player_name, player_color, players, x, y, orient)
 
             if do_write and not is_multiplayer:
                 moves.append([x, y, orient])
 
-            if walls_mask.overlap(hitbox_mask, (-x, -y)):
-                x, y = x_save, y_save
-                if do_ping_pong:
-                    old_super = do_ping_pong
-                    while do_ping_pong == old_super:
-                        do_ping_pong = random.randint(1, 8)
-                    logging.info("New ping pong direction, %s.", do_ping_pong)
+            x, y, do_ping_pong = collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
 
         if ticks == 1:
             logging.info("Loading images...")
@@ -389,6 +309,106 @@ def main(player_name, player_color, is_multiplayer, d):
     pygame.quit()
     if is_multiplayer:
         client.close()
+
+def update_multiplayer(client, player_name, player_color, players, x, y, orient):
+    info = client.get()
+    if info != None:
+        print(info)
+        if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
+            found = False
+            for j in players:
+                if info[0] == j.nickname and info[4] == j.color:
+                    j.update(info[3], info[1], info[2])
+                    found = True
+                    break
+            if not found:
+                new = Crew(info[4], info[0])
+                players.append(new)
+                new.update(info[3], info[1], info[2])
+    client.write([player_name, x, y, orient, player_color])
+
+def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong):
+    if walls_mask.overlap(hitbox_mask, (-x, -y)):
+        x, y = x_save, y_save
+        if do_ping_pong:
+            old_super = do_ping_pong
+            while do_ping_pong == old_super:
+                do_ping_pong = random.randint(1, 8)
+            logging.info("New ping pong direction, %s.", do_ping_pong)
+    return x, y, do_ping_pong
+
+def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient):
+    keys = pygame.key.get_pressed()
+
+    new_x = new_y = 0
+
+    if do_ping_pong:
+        new_x, new_y = ping_pong(do_ping_pong)
+    else:
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            new_x += change
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            new_x -= change
+
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            new_y += change
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            new_y -= change
+
+    if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
+        logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
+        ping = ticks
+        if do_ping_pong:
+            do_ping_pong = False
+        else:
+            do_ping_pong = True
+
+    if new_x > 0:
+        orient = "Left"
+    elif new_x < 0:
+        orient = "Right"
+    return ping, do_ping_pong, new_x, new_y, orient
+
+def check_for_input(is_multiplayer, kill_btn, running):
+    do_kill = False
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            logging.info("Got exit signal.")
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN and not is_multiplayer:
+            if event.button == 1 and kill_btn.collidepoint(event.pos):
+                logging.info("Got mouse press signal.")
+                do_kill = True
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q and not is_multiplayer:
+                logging.info("Got Q press signal.")
+                do_kill = True
+    return do_kill, running
+
+def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
+    logging.info("Killing...")
+    dists = []
+    for i in bots:
+        dists.append(i.distance_from_center())
+    if min(dists) <= 270 and ticks - kill_save > 120:
+        enemy_ind = dists.index(min(dists))
+        enemy = bots[enemy_ind]
+        x, y = enemy.get_coords()
+        logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
+        bots.pop(enemy_ind)
+        kill_save = ticks
+        logging.info("%s people left, rendering counter.", str(len(bots) + 1))
+        textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+        counter = pygame.Surface((1280, 720))
+        counter.blit(textSurf, [0, 0])
+        counter.set_colorkey((0,0,0))
+    else:
+        logging.info("No bots in kill distance or kill cooldown is active.")
+    do_kill = False
+    if len(bots) == 0:
+        logging.info("All bots killed.")
+        kill_possible = False
+    return x, y, kill_possible, counter
 
 def character_limit(entry_text):
     if len(entry_text.get()) > 15:
