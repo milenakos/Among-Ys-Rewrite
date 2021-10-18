@@ -150,7 +150,7 @@ def main(player_name, player_color, is_multiplayer, d):
     pygame.font.init()
 
     logging.info("Loading variables...")
-    client, walls_mask, hitbox_mask, kill_btn = 0, 0, 0, 0
+    client, walls_mask, hitbox_mask, kill_btn, counter = 0, 0, 0, 0, 0
     do_kill = False
     do_write = False
     do_ping_pong = False
@@ -342,18 +342,7 @@ def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient):
 
     new_x = new_y = 0
 
-    if do_ping_pong:
-        new_x, new_y = ping_pong(do_ping_pong)
-    else:
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            new_x += change
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            new_x -= change
-
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            new_y += change
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            new_y -= change
+    new_x, new_y = calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y)
 
     if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
         logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
@@ -368,6 +357,21 @@ def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient):
     elif new_x < 0:
         orient = "Right"
     return ping, do_ping_pong, new_x, new_y, orient
+
+def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y):
+    if do_ping_pong:
+        new_x, new_y = ping_pong(do_ping_pong)
+    else:
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            new_x += change
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            new_x -= change
+
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            new_y += change
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            new_y -= change
+    return new_x, new_y
 
 def check_for_input(is_multiplayer, kill_btn, running):
     do_kill = False
