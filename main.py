@@ -451,5 +451,5 @@ if __name__ == "__main__":
         if e == "can't invoke \"destroy\" command: application has been destroyed":
             logging.info("Aplication exit by user, no errors.")
         else:
-            logging.fatal(e)
+            logging.fatal(str(traceback.format_exc()))
             pygame.quit()
