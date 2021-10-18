@@ -1,4 +1,4 @@
-import random, math, os, pygame, requests, sys, logging, socket, threading, json, ast
+import random, math, os, pygame, requests, sys, logging, socket, threading, json, ast, traceback
 import tkinter as tk
 
 class Client:
