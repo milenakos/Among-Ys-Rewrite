@@ -91,10 +91,9 @@ class Bot(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
         self.moves = ast.literal_eval(open("moves\\file" + str(idd) + ".txt", "r").read())
-        self.future_name = random.randint(0, len(names) - 1)
-        self.my_name = names[self.future_name]
+        self.my_name = random.choice(names)
         self.name = Name(self.my_name, False)
-        names.pop(self.future_name)
+        names.remove(self.my_name)
         self.ticks = ticks
 
     def update(self, x, y, screen, orient):
