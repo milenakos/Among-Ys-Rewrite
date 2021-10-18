@@ -142,7 +142,6 @@ def ping_pong(do_ping_pong):
 
 def main(player_name, player_color, is_multiplayer, d):
     v = "v2.2.0"
-    loading = False
 
     logging.info("Loading pygame...")
     
@@ -150,38 +149,31 @@ def main(player_name, player_color, is_multiplayer, d):
     pygame.font.init()
 
     logging.info("Loading variables...")
-    client, walls_mask, hitbox_mask, kill_btn, counter, back, crew = 0, 0, 0, 0, 0, 0, 0
-    do_kill = False
-    do_write = False
-    do_ping_pong = False
-    kill_possible = True
-    ticks = 0
-    FPS = 120
-    x = -2800
-    y = -450
-    change = 12
-    old_super = -1
-    ping = -100
-    kill_save = -120
+    
+    client, walls_mask, hitbox_mask, kill_btn, counter, back, crew = 0, 0, 0, 0, 0, 0, 0 # to fix "Referenced before assigment" errors
+    
+    do_kill, do_write, do_ping_pong, kill_possible, running, loading = False, False, False, True, True, False
+    
+    ticks, FPS, x, y, change, old_super, ping, kill_save = 0, 120, -2800, -450, 12, -1, -100, -120
+    
     orient = "Left"
-    names = ["Xiaoness191", "Milenakos", "SOKE®", "RubiK", "=/", "^ Frinkifail ^", "m(._.)m",
+    
+    names = ["Xiaoness191", "Milenakos", "SOKE®", "RubiK", "=/", "^ Frinkifail ^", "m(._.)m", "hezigonic",
              "Andrew Meep", "atomicgrape908", "suffix.", "CatRBLX", "Deltaonetrooper", "drealy", "Drewskibob",
              "Euro2555", "nclazrfpyt", "finched also poppi alpha", "FloppityLopp", "GentleToonMan", "GentleToonMan",
              "J'zargo", "lucyy", "m(._.)mV2", "Mr. snowmanfan20_YT", "normal", "exotic", "Stoned", "Allleeeeeccccccc",
-             "ThisIsMyUsername", "tiddcunt", "Vana_Ungkap", "WarNoodleZ", "Wut", "Yuuta Togashi", "Zatrex", "FedeGamer", "hezigonic"]
-    colors = ["Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
-              "Tan", "Coral", "Olive", "Fortegreen"]
-    moves = []
-    bots = []
-    players = []
+             "ThisIsMyUsername", "tiddcunt", "Vana_Ungkap", "WarNoodleZ", "Wut", "Yuuta Togashi", "Zatrex", "FedeGamer"]
+    
+    colors = ["Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime",
+             "Maroon", "Rose", "Banana", "Gray", "Tan", "Coral", "Olive", "Fortegreen"]
+    
+    moves, bots, players = [], [], []
 
     logging.info("Creating game window...")
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Among Ys Rewrite")
     clock = pygame.time.Clock()
     all_sprites = pygame.sprite.Group()
-
-    running = True
 
     logging.info("Rendering first frame...")
     font = pygame.font.Font("arlrdbd.ttf", 30)
