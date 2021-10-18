@@ -150,7 +150,7 @@ def main(player_name, player_color, is_multiplayer, d):
     pygame.font.init()
 
     logging.info("Loading variables...")
-    client, walls_mask, hitbox_mask, kill_btn, counter = 0, 0, 0, 0, 0
+    client, walls_mask, hitbox_mask, kill_btn, counter, back, crew = 0, 0, 0, 0, 0, 0, 0
     do_kill = False
     do_write = False
     do_ping_pong = False
@@ -204,20 +204,7 @@ def main(player_name, player_color, is_multiplayer, d):
             if do_kill and kill_possible and not is_multiplayer:
                 x, y, kill_possible, counter = kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter)
 
-            ping, do_ping_pong, new_x, new_y, orient = do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient)
-
-            x_save, y_save = x, y
-
-            x += new_x
-            y += new_y
-            
-            if ticks > 4 and is_multiplayer:
-                update_multiplayer(client, player_name, player_color, players, x, y, orient)
-
-            if do_write and not is_multiplayer:
-                moves.append([x, y, orient])
-
-            x, y, do_ping_pong = collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
+            ping, do_ping_pong, orient, x, y = move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask)
 
         if ticks == 1:
             logging.info("Loading images...")
@@ -279,26 +266,7 @@ def main(player_name, player_color, is_multiplayer, d):
                 log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
             loading = font.render(log_text, 1, (255, 255, 255))
 
-        screen.fill((0, 0, 0))
-        
-        if ticks > 4:
-            screen.blit(back, (x, y))
-            for i in bots:
-                i.update(x, y, screen, orient)
-            for i in players:
-                i.draw(screen, x, y)
-            if not is_multiplayer:
-                screen.blit(counter, (0, 0))
-                if kill_possible:
-                    screen.blit(kill, kill_btn)
-            crew.update(orient)
-            crew.draw(screen)
-            walls.get_rect().center = (x, y)
-        if loading:
-            screen.blit(loading, (0, 680))
-        
-        all_sprites.update(x, y, screen, orient)
-        pygame.display.flip()
+        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, all_sprites)
 
     if do_write:
         file = open("moves\\file.txt", "w")
@@ -307,8 +275,48 @@ def main(player_name, player_color, is_multiplayer, d):
 
     logging.info("Quitting pygame...")
     pygame.quit()
+    
     if is_multiplayer:
         client.close()
+
+def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, all_sprites):
+    screen.fill((0, 0, 0))
+
+    if ticks > 4:
+        screen.blit(back, (x, y))
+        for i in bots:
+            i.update(x, y, screen, orient)
+        for i in players:
+            i.draw(screen, x, y)
+        if not is_multiplayer:
+            screen.blit(counter, (0, 0))
+            if kill_possible:
+                screen.blit(kill, kill_btn)
+        crew.update(orient)
+        crew.draw(screen)
+        walls.get_rect().center = (x, y)
+    if loading:
+        screen.blit(loading, (0, 680))
+
+    all_sprites.update(x, y, screen, orient)
+    pygame.display.flip()
+
+def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask):
+    ping, do_ping_pong, new_x, new_y, orient = do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient)
+
+    x_save, y_save = x, y
+
+    x += new_x
+    y += new_y
+
+    if ticks > 4 and is_multiplayer:
+        update_multiplayer(client, player_name, player_color, players, x, y, orient)
+
+    if do_write and not is_multiplayer:
+        moves.append([x, y, orient])
+
+    x, y, do_ping_pong = collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
+    return ping, do_ping_pong, orient, x, y
 
 def update_multiplayer(client, player_name, player_color, players, x, y, orient):
     info = client.get()
