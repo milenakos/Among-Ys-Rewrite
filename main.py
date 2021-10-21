@@ -210,7 +210,7 @@ def main(player_name, player_color, is_multiplayer, d):
             kill_btn.center = (1200, 640)
             logging.info("Checking for updates...")
             loading = font.render("Checking for updates...", 1, (255, 255, 255))
-        if ticks == 2:
+        elif ticks == 2:
             try:
                 latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
                 version = json.loads(latest)["name"]
