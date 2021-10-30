@@ -172,7 +172,6 @@ def main(player_name, player_color, is_multiplayer, d):
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Among Ys Rewrite")
     clock = pygame.time.Clock()
-    all_sprites = pygame.sprite.Group()
 
     logging.info("Rendering first frame...")
     font = pygame.font.Font("arlrdbd.ttf", 30)
@@ -182,7 +181,6 @@ def main(player_name, player_color, is_multiplayer, d):
     
     screen.blit(loading, (0, 680))
     
-    all_sprites.update(x, y, screen, orient)
     pygame.display.flip()
 
     while running:
@@ -257,7 +255,7 @@ def main(player_name, player_color, is_multiplayer, d):
                 log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
             loading = font.render(log_text, 1, (255, 255, 255))
 
-        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, all_sprites)
+        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading)
 
     if do_write:
         file = open("moves\\file.txt", "w")
@@ -270,7 +268,7 @@ def main(player_name, player_color, is_multiplayer, d):
     if is_multiplayer:
         client.close()
 
-def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, all_sprites):
+def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading):
     screen.fill((0, 0, 0))
 
     if ticks > 4:
@@ -289,7 +287,6 @@ def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplay
     if loading:
         screen.blit(loading, (0, 680))
 
-    all_sprites.update(x, y, screen, orient)
     pygame.display.flip()
 
 def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask):
