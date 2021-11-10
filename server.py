@@ -1,12 +1,3 @@
-# License for this file:
-#
-#            DO WHAT THE HECK YOU WANT TO PUBLIC LICENSE
-#
-#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
-#
-#  0. You just DO WHAT THE HECK YOU WANT TO.
-
-
 import socket
 import threading
 
