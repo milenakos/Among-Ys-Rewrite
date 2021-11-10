@@ -21,9 +21,7 @@ import random, math, os, pygame, requests, sys, logging, socket, threading, json
 import tkinter as tk
 
 def get_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
@@ -67,7 +65,7 @@ class Name(pygame.sprite.Sprite):
         self.name = name
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(get_path("arlrdbd.ttf"), 35)
-        self.textSurf = self.font.render(name, 1, (255, color, color))
+        self.textSurf = self.font.render(name, 5, (255, color, color))
         self.image = pygame.Surface((1280, 720))
         W = self.textSurf.get_width()
         H = self.textSurf.get_height()
@@ -178,7 +176,7 @@ def main(player_name, player_color, is_multiplayer, d):
 
     logging.info("Loading variables...")
     
-    client, walls_mask, hitbox_mask, kill_btn, counter, back, crew = 0, 0, 0, 0, 0, 0, 0 # to fix "Referenced before assigment" errors
+    client, walls_mask, hitbox_mask, chat_opened, kill_btn, counter, back, crew, chat_delay, message_done, message_text, log_text = 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "", "" # to fix "Referenced before assigment" errors
     
     do_kill, do_write, do_ping_pong, kill_possible, running, loading = False, False, False, True, True, False
     
@@ -204,7 +202,7 @@ def main(player_name, player_color, is_multiplayer, d):
 
     logging.info("Rendering first frame...")
     font = pygame.font.Font(get_path("arlrdbd.ttf"), 30)
-    loading = font.render("Loading images...", 1, (255, 255, 255))
+    loading = font.render("Loading images...", 5, (255, 255, 255))
 
     screen.fill((0, 0, 0))
     
@@ -216,13 +214,13 @@ def main(player_name, player_color, is_multiplayer, d):
         clock.tick(FPS)
         ticks += 1
         
-        do_kill, running = check_for_input(is_multiplayer, kill_btn, running)
+        do_kill, running, message_text, message_done = check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done)
 
         if ticks != 1:
             if do_kill and kill_possible and not is_multiplayer:
                 x, y, kill_possible, counter = kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter)
 
-            ping, do_ping_pong, orient, x, y = move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask)
+            ping, do_ping_pong, orient, x, y, chat_opened, chat_delay, message_done, log_text = move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, chat_delay, message_done, log_text)
 
         if ticks == 1:
             logging.info("Loading images...")
@@ -236,7 +234,7 @@ def main(player_name, player_color, is_multiplayer, d):
             kill_btn = kill.get_rect()
             kill_btn.center = (1200, 640)
             logging.info("Checking for updates...")
-            loading = font.render("Checking for updates...", 1, (255, 255, 255))
+            loading = [font.render("Checking for updates...", 5, (255, 255, 255))]
         elif ticks == 2:
             try:
                 latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
@@ -245,33 +243,33 @@ def main(player_name, player_color, is_multiplayer, d):
                 logging.warning("Failed to check version.")
                 version = None
             logging.info("Loading map...")
-            loading = font.render("Loading map...", 1, (255, 255, 255))
+            loading = [font.render("Loading map...", 5, (255, 255, 255))]
         elif ticks == 3:
             back = pygame.image.load(get_path('img/skeld.png'))
             crew = Crew(player_color, player_name)
             if is_multiplayer:
                 logging.info("Connecting to server...")
-                loading = font.render("Connecting to server...", 1, (255, 255, 255))
+                loading = [font.render("Connecting to server...", 5, (255, 255, 255))]
             else:
                 logging.info("Loading bots...")
-                loading = font.render("Loading bots...", 1, (255, 255, 255))
+                loading = [font.render("Loading bots...", 5, (255, 255, 255))]
         elif ticks == 4 and not is_multiplayer:
             if not do_write:
                 for i in range(0, len(os.listdir(get_path("moves")))):
                     bot = Bot(i, colors, names, ticks)
                     bots.append(bot)
             logging.info("Loading text...")
-            loading = font.render("Loading text...", 1, (255, 255, 255))
+            loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 4:
             HOST, PORT = is_multiplayer.split(":")
 
             client = Client(HOST, int(PORT))
             logging.info("Loading text...")
-            loading = font.render("Loading text...", 1, (255, 255, 255))
+            loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
             font1 = pygame.font.Font(get_path("arlrdbd.ttf"), 35)
-            textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+            textSurf = font1.render("People left: " + str(len(bots) + 1), 5, (255, 255, 255))
             counter = pygame.Surface((1280, 720))
             counter.blit(textSurf, [0, 0])
             counter.set_colorkey((0,0,0))
@@ -281,10 +279,14 @@ def main(player_name, player_color, is_multiplayer, d):
                 log_text += "Failed to start logging.\n"
             elif version and version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
-                log_text += "New version of Among Ys Rewrite is available. Please upgrade your game."
-            loading = font.render(log_text, 1, (255, 255, 255))
+                log_text += "New version of Among Ys Rewrite is available. Please upgrade your game.\n"
+        
+        if ticks > 5:
+            loading = []
+            for i in log_text.splitlines()[::-1]:
+                loading.append(font.render(i, 5, (255, 255, 255)))
 
-        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading)
+        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, chat_opened, message_text, font)
 
     if do_write:
         file = open("moves\\file.txt", "w")
@@ -297,8 +299,9 @@ def main(player_name, player_color, is_multiplayer, d):
     if is_multiplayer:
         client.close()
 
-def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading):
+def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, chat_opened, message_text, font):
     screen.fill((0, 0, 0))
+    chat_offset = 0
 
     if ticks > 4:
         screen.blit(back, (x, y))
@@ -313,13 +316,24 @@ def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplay
         crew.update(orient)
         crew.draw(screen)
         walls.get_rect().center = (x, y)
+    if ticks > 4 and chat_opened:
+        pygame.draw.rect(screen, (255,255,255), (10, 660, 500, 50))
+        pygame.draw.rect(screen, (0,0,0), (10, 660, 500, 50), 5)
+        textSurf = font.render(str(message_text), 5, (0, 0, 0))
+        message = pygame.Surface((1280, 720))
+        message.fill((255,255,255))
+        message.blit(textSurf, [0, 0])
+        message.set_colorkey((255,255,255))
+        screen.blit(message, (20, 660))
+        chat_offset += 70
     if loading:
-        screen.blit(loading, (0, 680))
+        for num, i in enumerate(loading):
+            screen.blit(i, (0, 680 - chat_offset - (num * 35)))
 
     pygame.display.flip()
 
-def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask):
-    ping, do_ping_pong, new_x, new_y, orient = do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient)
+def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, chat_delay, message_done, log_text):
+    ping, do_ping_pong, new_x, new_y, orient, chat_opened, chat_delay = do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient, chat_opened, chat_delay)
 
     x_save, y_save = x, y
 
@@ -327,18 +341,17 @@ def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y,
     y += new_y
 
     if ticks > 4 and is_multiplayer:
-        update_multiplayer(client, player_name, player_color, players, x, y, orient)
+        message_done, log_text = update_multiplayer(client, player_name, player_color, players, x, y, orient, message_done, log_text)
 
     if do_write and not is_multiplayer:
         moves.append([x, y, orient])
 
     x, y, do_ping_pong = collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
-    return ping, do_ping_pong, orient, x, y
+    return ping, do_ping_pong, orient, x, y, chat_opened, chat_delay, message_done, log_text
 
-def update_multiplayer(client, player_name, player_color, players, x, y, orient):
+def update_multiplayer(client, player_name, player_color, players, x, y, orient, message_done, log_text):
     info = client.get()
     if info != None:
-        print(info)
         if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
             found = False
             for j in players:
@@ -350,7 +363,12 @@ def update_multiplayer(client, player_name, player_color, players, x, y, orient)
                 new = Crew(info[4], info[0])
                 players.append(new)
                 new.update(info[3], info[1], info[2])
-    client.write([player_name, x, y, orient, player_color])
+        if isinstance(info, list) and info[5] != "":
+            log_text += info[0] + ": " + info[5] + "\n"
+    client.write([player_name, x, y, orient, player_color, message_done])
+    if message_done != "":
+        log_text += player_name + ": " + message_done + "\n"
+    return "", log_text
 
 def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong):
     if walls_mask.overlap(hitbox_mask, (-x, -y)):
@@ -362,14 +380,14 @@ def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
             logging.info("New ping pong direction, %s.", do_ping_pong)
     return x, y, do_ping_pong
 
-def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient):
+def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient, chat_opened, chat_delay):
     keys = pygame.key.get_pressed()
 
     new_x = new_y = 0
 
-    new_x, new_y = calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y)
+    new_x, new_y, chat_opened, chat_delay = calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened, ticks, chat_delay, is_multiplayer)
 
-    if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer:
+    if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer and not chat_opened:
         logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
         ping = ticks
         if do_ping_pong:
@@ -381,12 +399,12 @@ def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient):
         orient = "Left"
     elif new_x < 0:
         orient = "Right"
-    return ping, do_ping_pong, new_x, new_y, orient
+    return ping, do_ping_pong, new_x, new_y, orient, chat_opened, chat_delay
 
-def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y):
+def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened, ticks, chat_delay, is_multiplayer):
     if do_ping_pong:
         new_x, new_y = ping_pong(do_ping_pong)
-    else:
+    elif not chat_opened:
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             new_x += change
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
@@ -396,23 +414,41 @@ def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y):
             new_y += change
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
             new_y -= change
-    return new_x, new_y
 
-def check_for_input(is_multiplayer, kill_btn, running):
+    if keys[pygame.K_RETURN] and ticks - chat_delay >= 20 and is_multiplayer:
+        if chat_opened:
+            chat_opened = False
+            chat_delay = ticks
+        else:
+            chat_opened = True
+            chat_delay = ticks
+    return new_x, new_y, chat_opened, chat_delay
+
+def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done):
     do_kill = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             logging.info("Got exit signal.")
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and not is_multiplayer:
-            if event.button == 1 and kill_btn.collidepoint(event.pos):
+            if event.button == 1 and kill_btn.collidepoint(event.pos) and not chat_opened:
                 logging.info("Got mouse press signal.")
                 do_kill = True
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q and not is_multiplayer:
-                logging.info("Got Q press signal.")
-                do_kill = True
-    return do_kill, running
+                if not chat_opened:
+                    logging.info("Got Q press signal.")
+                    do_kill = True
+            if chat_opened:
+                if event.key == pygame.K_RETURN:
+                    logging.info(f"{message_text} was sent by me!")
+                    message_done = message_text
+                    message_text = ''
+                elif event.key == pygame.K_BACKSPACE:
+                    message_text = message_text[:-1]
+                else:
+                    message_text = str(message_text) + event.unicode
+    return do_kill, running, message_text, message_done
 
 def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
     logging.info("Killing...")
@@ -427,7 +463,7 @@ def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
         bots.pop(enemy_ind)
         kill_save = ticks
         logging.info("%s people left, rendering counter.", str(len(bots) + 1))
-        textSurf = font.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
+        textSurf = font.render("People left: " + str(len(bots) + 1), 5, (255, 255, 255))
         counter = pygame.Surface((1280, 720))
         counter.blit(textSurf, [0, 0])
         counter.set_colorkey((0,0,0))
