@@ -141,7 +141,7 @@ class Bot(pygame.sprite.Sprite):
     def get_coords(self):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
-def ping_pong(do_ping_pong):
+def ping_pong(do_ping_pong, new_x, new_y, change):
     if do_ping_pong == True:
         do_ping_pong = random.randint(1, 8)
     if do_ping_pong == 1:
@@ -176,11 +176,11 @@ def main(player_name, player_color, is_multiplayer, d):
 
     logging.info("Loading variables...")
     
-    client, walls_mask, hitbox_mask, chat_opened, kill_btn, counter, back, crew, chat_delay, message_done, message_text, log_text = 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "", "" # to fix "Referenced before assigment" errors
+    client, walls_mask, hitbox_mask, chat_opened, kill_btn, counter, back, crew, message_done, message_text, log_text = 0, 0, 0, 0, 0, 0, 0, 0, "", "", "" # to fix "Referenced before assigment" errors
     
     do_kill, do_write, do_ping_pong, kill_possible, running, loading = False, False, False, True, True, False
     
-    ticks, FPS, x, y, change, old_super, ping, kill_save = 0, 120, -2800, -450, 12, -1, -100, -120
+    ticks, FPS, x, y, change, old_super, kill_save = 0, 120, -2800, -450, 12, -1, -120
     
     orient = "Left"
     
@@ -193,7 +193,7 @@ def main(player_name, player_color, is_multiplayer, d):
     colors = ["Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime",
              "Maroon", "Rose", "Banana", "Gray", "Tan", "Coral", "Olive", "Fortegreen"]
     
-    moves, bots, players = [], [], []
+    moves, bots, players, loading2 = [], [], [], []
 
     logging.info("Creating game window...")
     screen = pygame.display.set_mode((1280, 720))
@@ -202,11 +202,12 @@ def main(player_name, player_color, is_multiplayer, d):
 
     logging.info("Rendering first frame...")
     font = pygame.font.Font(get_path("arlrdbd.ttf"), 30)
+    font1 = pygame.font.Font(get_path("arlrdbd.ttf"), 35)
     loading = font.render("Loading images...", 5, (255, 255, 255))
 
     screen.fill((0, 0, 0))
     
-    screen.blit(loading, (0, 680))
+    screen.blit(loading, (5, 680))
     
     pygame.display.flip()
 
@@ -214,13 +215,13 @@ def main(player_name, player_color, is_multiplayer, d):
         clock.tick(FPS)
         ticks += 1
         
-        do_kill, running, message_text, message_done = check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done)
+        do_kill, running, message_text, message_done, do_ping_pong = check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done, do_ping_pong)
 
         if ticks != 1:
             if do_kill and kill_possible and not is_multiplayer:
                 x, y, kill_possible, counter = kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter)
 
-            ping, do_ping_pong, orient, x, y, chat_opened, chat_delay, message_done, log_text = move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, chat_delay, message_done, log_text)
+            do_ping_pong, orient, x, y, chat_opened, message_done, log_text = move_player(do_ping_pong, change, ticks, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, message_done, log_text)
 
         if ticks == 1:
             logging.info("Loading images...")
@@ -268,7 +269,6 @@ def main(player_name, player_color, is_multiplayer, d):
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
-            font1 = pygame.font.Font(get_path("arlrdbd.ttf"), 35)
             textSurf = font1.render("People left: " + str(len(bots) + 1), 5, (255, 255, 255))
             counter = pygame.Surface((1280, 720))
             counter.blit(textSurf, [0, 0])
@@ -283,23 +283,25 @@ def main(player_name, player_color, is_multiplayer, d):
         
         if ticks > 5:
             loading = []
+            loading2 = []
             for i in log_text.splitlines()[::-1]:
                 loading.append(font.render(i, 5, (255, 255, 255)))
+                loading2.append(font.render(i, 5, (0, 0, 0)))
 
-        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, chat_opened, message_text, font)
+        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, loading2, chat_opened, message_text, font)
 
     if do_write:
         file = open("moves\\file.txt", "w")
         file.write(str(moves))
         file.close()
 
-    logging.info("Quitting pygame...")
-    pygame.quit()
-    
     if is_multiplayer:
         client.close()
 
-def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, chat_opened, message_text, font):
+    logging.info("Quitting pygame...")
+    pygame.quit()
+
+def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, loading2, chat_opened, message_text, font):
     screen.fill((0, 0, 0))
     chat_offset = 0
 
@@ -327,13 +329,24 @@ def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplay
         screen.blit(message, (20, 660))
         chat_offset += 70
     if loading:
+        for num, i in enumerate(loading2):
+            x = 5
+            y = 680 - chat_offset - (num * 35)
+            screen.blit(i, (x + 2, y + 2))
+            screen.blit(i, (x + 2, y - 2))
+            screen.blit(i, (x - 2, y + 2))
+            screen.blit(i, (x - 2, y - 2))
+            screen.blit(i, (x, y + 2))
+            screen.blit(i, (x, y - 2))
+            screen.blit(i, (x - 2, y))
+            screen.blit(i, (x + 2, y))
         for num, i in enumerate(loading):
-            screen.blit(i, (0, 680 - chat_offset - (num * 35)))
+            screen.blit(i, (5, 680 - chat_offset - (num * 35)))
 
     pygame.display.flip()
 
-def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, chat_delay, message_done, log_text):
-    ping, do_ping_pong, new_x, new_y, orient, chat_opened, chat_delay = do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient, chat_opened, chat_delay)
+def move_player(do_ping_pong, change, ticks, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, message_done, log_text):
+    do_ping_pong, new_x, new_y, orient, chat_opened = do_movement(do_ping_pong, change, ticks, is_multiplayer, orient, chat_opened)
 
     x_save, y_save = x, y
 
@@ -347,7 +360,7 @@ def move_player(do_ping_pong, change, ticks, ping, is_multiplayer, orient, x, y,
         moves.append([x, y, orient])
 
     x, y, do_ping_pong = collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
-    return ping, do_ping_pong, orient, x, y, chat_opened, chat_delay, message_done, log_text
+    return do_ping_pong, orient, x, y, chat_opened, message_done, log_text
 
 def update_multiplayer(client, player_name, player_color, players, x, y, orient, message_done, log_text):
     info = client.get()
@@ -380,30 +393,22 @@ def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
             logging.info("New ping pong direction, %s.", do_ping_pong)
     return x, y, do_ping_pong
 
-def do_movement(do_ping_pong, change, ticks, ping, is_multiplayer, orient, chat_opened, chat_delay):
+def do_movement(do_ping_pong, change, ticks, is_multiplayer, orient, chat_opened):
     keys = pygame.key.get_pressed()
 
     new_x = new_y = 0
 
-    new_x, new_y, chat_opened, chat_delay = calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened, ticks, chat_delay, is_multiplayer)
-
-    if keys[pygame.K_p] and ticks - ping > 100 and not is_multiplayer and not chat_opened:
-        logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
-        ping = ticks
-        if do_ping_pong:
-            do_ping_pong = False
-        else:
-            do_ping_pong = True
+    new_x, new_y = calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened)
 
     if new_x > 0:
         orient = "Left"
     elif new_x < 0:
         orient = "Right"
-    return ping, do_ping_pong, new_x, new_y, orient, chat_opened, chat_delay
+    return do_ping_pong, new_x, new_y, orient, chat_opened
 
-def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened, ticks, chat_delay, is_multiplayer):
+def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened):
     if do_ping_pong:
-        new_x, new_y = ping_pong(do_ping_pong)
+        new_x, new_y = ping_pong(do_ping_pong, new_x, new_y, change)
     elif not chat_opened:
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             new_x += change
@@ -414,17 +419,9 @@ def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_
             new_y += change
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
             new_y -= change
+    return new_x, new_y
 
-    if keys[pygame.K_RETURN] and ticks - chat_delay >= 20 and is_multiplayer:
-        if chat_opened:
-            chat_opened = False
-            chat_delay = ticks
-        else:
-            chat_opened = True
-            chat_delay = ticks
-    return new_x, new_y, chat_opened, chat_delay
-
-def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done):
+def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done, do_ping_pong):
     do_kill = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -439,6 +436,17 @@ def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text
                 if not chat_opened:
                     logging.info("Got Q press signal.")
                     do_kill = True
+            if event.key == pygame.K_p and not is_multiplayer and not chat_opened:
+                logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
+                if do_ping_pong:
+                    do_ping_pong = False
+                else:
+                    do_ping_pong = True
+            if event.key == pygame.K_RETURN and is_multiplayer:
+                if chat_opened:
+                    chat_opened = False
+                else:
+                    chat_opened = True
             if chat_opened:
                 if event.key == pygame.K_RETURN:
                     logging.info(f"{message_text} was sent by me!")
@@ -448,7 +456,7 @@ def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text
                     message_text = message_text[:-1]
                 else:
                     message_text = str(message_text) + event.unicode
-    return do_kill, running, message_text, message_done
+    return do_kill, running, message_text, message_done, do_ping_pong
 
 def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
     logging.info("Killing...")
