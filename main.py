@@ -378,10 +378,11 @@ def update_multiplayer(client, player_name, player_color, players, x, y, orient,
                 new.update(info[3], info[1], info[2])
         if isinstance(info, list) and info[5] != "":
             log_text += info[0] + ": " + info[5] + "\n"
+            print("RECIEVED " + info[5])
     client.write([player_name, x, y, orient, player_color, message_done])
     if message_done != "":
         log_text += player_name + ": " + message_done + "\n"
-    print("ADDING " + message_done)
+        print("ADDED " + message_done)
     return "", log_text
 
 def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong):
@@ -443,13 +444,6 @@ def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text
                     do_ping_pong = False
                 else:
                     do_ping_pong = True
-            if event.key == pygame.K_RETURN and is_multiplayer:
-                print(chat_opened)
-                if chat_opened:
-                    chat_opened = False
-                else:
-                    chat_opened = True
-                print(chat_opened)
             if chat_opened:
                 if event.key == pygame.K_RETURN:
                     logging.info(f"{message_text} was sent by me!")
@@ -459,6 +453,11 @@ def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text
                     message_text = message_text[:-1]
                 else:
                     message_text = str(message_text) + event.unicode
+            if event.key == pygame.K_RETURN and is_multiplayer:
+                if chat_opened:
+                    chat_opened = False
+                else:
+                    chat_opened = True
     return do_kill, running, message_text, message_done, do_ping_pong, chat_opened
 
 def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
