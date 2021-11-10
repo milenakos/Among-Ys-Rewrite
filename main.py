@@ -530,6 +530,8 @@ if __name__ == "__main__":
         logging.info('Destorying window...')
         master.destroy()
         logging.info('Starting game...')
+        if c == "l":
+            c = "127.0.0.1:9090"
         main(a, b, c, d)
     except Exception as e:
         logging.warning('Got error! Analysing...')
