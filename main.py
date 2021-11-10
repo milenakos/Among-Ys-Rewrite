@@ -436,31 +436,35 @@ def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text
                 logging.info("Got mouse press signal.")
                 do_kill = True
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_q and not is_multiplayer:
-                if not chat_opened:
-                    logging.info("Got Q press signal.")
-                    do_kill = True
-            if event.key == pygame.K_p and not is_multiplayer and not chat_opened:
-                logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
-                if do_ping_pong:
-                    do_ping_pong = False
-                else:
-                    do_ping_pong = True
-            if chat_opened:
-                if event.key == pygame.K_RETURN:
-                    logging.info(f"{message_text} was sent by me!")
-                    message_done = message_text
-                    message_text = ''
-                elif event.key == pygame.K_BACKSPACE:
-                    message_text = message_text[:-1]
-                else:
-                    message_text = str(message_text) + event.unicode
-            if event.key == pygame.K_RETURN and is_multiplayer:
-                if chat_opened:
-                    chat_opened = False
-                else:
-                    chat_opened = True
+            do_ping_pong, message_text, chat_opened, do_kill, message_done = keydown_functions(event, is_multiplayer, chat_opened, do_ping_pong, message_text, do_kill, message_done)
     return do_kill, running, message_text, message_done, do_ping_pong, chat_opened
+
+def keydown_functions(event, is_multiplayer, chat_opened, do_ping_pong, message_text, do_kill, message_done):
+    if event.key == pygame.K_q and not is_multiplayer:
+        if not chat_opened:
+            logging.info("Got Q press signal.")
+            do_kill = True
+    if event.key == pygame.K_p and not is_multiplayer and not chat_opened:
+        logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
+        if do_ping_pong:
+            do_ping_pong = False
+        else:
+            do_ping_pong = True
+    if chat_opened:
+        if event.key == pygame.K_RETURN:
+            logging.info(f"{message_text} was sent by me!")
+            message_done = message_text
+            message_text = ''
+        elif event.key == pygame.K_BACKSPACE:
+            message_text = message_text[:-1]
+        else:
+            message_text = str(message_text) + event.unicode
+    if event.key == pygame.K_RETURN and is_multiplayer:
+        if chat_opened:
+            chat_opened = False
+        else:
+            chat_opened = True
+    return do_ping_pong, message_text, chat_opened, do_kill, message_done
 
 def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
     logging.info("Killing...")
