@@ -1,2 +1,6 @@
 log.txt
 .ropeproject
+__pycache__
+build
+dist
+main.spec

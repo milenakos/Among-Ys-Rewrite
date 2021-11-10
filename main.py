@@ -20,6 +20,16 @@
 import random, math, os, pygame, requests, sys, logging, socket, threading, json, ast, traceback
 import tkinter as tk
 
+def get_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 class Client:
     def __init__(self, host, port):
         self.info = None
@@ -56,7 +66,7 @@ class Name(pygame.sprite.Sprite):
             color = 255
         self.name = name
         pygame.sprite.Sprite.__init__(self)
-        self.font = pygame.font.Font("arlrdbd.ttf", 35)
+        self.font = pygame.font.Font(get_path("arlrdbd.ttf"), 35)
         self.textSurf = self.font.render(name, 1, (255, color, color))
         self.image = pygame.Surface((1280, 720))
         W = self.textSurf.get_width()
@@ -76,7 +86,7 @@ class Name(pygame.sprite.Sprite):
 class Crew(pygame.sprite.Sprite):
     def __init__(self, colors, name):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("img/crew/" + colors + ".png").convert_alpha()
+        self.image = pygame.image.load(get_path("img/crew/" + colors + ".png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (74, 99))
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
@@ -105,11 +115,11 @@ class Crew(pygame.sprite.Sprite):
 class Bot(pygame.sprite.Sprite):
     def __init__(self, idd, colors, names, ticks):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("img/crew/" + random.choice(colors) + ".png").convert_alpha()
+        self.image = pygame.image.load(get_path("img/crew/" + random.choice(colors) + ".png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (74, 99))
         self.rect = self.image.get_rect()
         self.rect.center = (640, 360)
-        self.moves = ast.literal_eval(open("moves\\file" + str(idd) + ".txt", "r").read())
+        self.moves = ast.literal_eval(open(get_path("moves\\file" + str(idd) + ".txt"), "r").read())
         self.my_name = random.choice(names)
         self.name = Name(self.my_name, False)
         names.remove(self.my_name)
@@ -193,7 +203,7 @@ def main(player_name, player_color, is_multiplayer, d):
     clock = pygame.time.Clock()
 
     logging.info("Rendering first frame...")
-    font = pygame.font.Font("arlrdbd.ttf", 30)
+    font = pygame.font.Font(get_path("arlrdbd.ttf"), 30)
     loading = font.render("Loading images...", 1, (255, 255, 255))
 
     screen.fill((0, 0, 0))
@@ -216,13 +226,13 @@ def main(player_name, player_color, is_multiplayer, d):
 
         if ticks == 1:
             logging.info("Loading images...")
-            walls = pygame.image.load("img/layout.png")
+            walls = pygame.image.load(get_path("img/layout.png"))
             walls_mask = pygame.mask.from_surface(walls)
 
-            hitbox = pygame.image.load("img/hitbox.png")
+            hitbox = pygame.image.load(get_path("img/hitbox.png"))
             hitbox_mask = pygame.mask.from_surface(hitbox)
 
-            kill = pygame.image.load("img/kill.png")
+            kill = pygame.image.load(get_path("img/kill.png"))
             kill_btn = kill.get_rect()
             kill_btn.center = (1200, 640)
             logging.info("Checking for updates...")
@@ -237,7 +247,7 @@ def main(player_name, player_color, is_multiplayer, d):
             logging.info("Loading map...")
             loading = font.render("Loading map...", 1, (255, 255, 255))
         elif ticks == 3:
-            back = pygame.image.load('img/skeld.png')
+            back = pygame.image.load(get_path('img/skeld.png'))
             crew = Crew(player_color, player_name)
             if is_multiplayer:
                 logging.info("Connecting to server...")
@@ -247,7 +257,7 @@ def main(player_name, player_color, is_multiplayer, d):
                 loading = font.render("Loading bots...", 1, (255, 255, 255))
         elif ticks == 4 and not is_multiplayer:
             if not do_write:
-                for i in range(0, len(os.listdir(".\\moves"))):
+                for i in range(0, len(os.listdir(get_path("moves")))):
                     bot = Bot(i, colors, names, ticks)
                     bots.append(bot)
             logging.info("Loading text...")
@@ -260,7 +270,7 @@ def main(player_name, player_color, is_multiplayer, d):
             loading = font.render("Loading text...", 1, (255, 255, 255))
         elif ticks == 5 and not is_multiplayer:
             logging.info("Rendering counter...")
-            font1 = pygame.font.Font("arlrdbd.ttf", 35)
+            font1 = pygame.font.Font(get_path("arlrdbd.ttf"), 35)
             textSurf = font1.render("People left: " + str(len(bots) + 1), 1, (255, 255, 255))
             counter = pygame.Surface((1280, 720))
             counter.blit(textSurf, [0, 0])
