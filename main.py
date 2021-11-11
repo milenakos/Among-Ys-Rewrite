@@ -376,15 +376,13 @@ def update_multiplayer(client, player_name, player_color, players, x, y, orient,
                 new = Crew(info[4], info[0])
                 players.append(new)
                 new.update(info[3], info[1], info[2])
-        if isinstance(info, list) and info[5] != "":
-            line = info[0] + ": " + info[5] + "\n"
-            if line not in log_text:
+            if info[5] != "":
+                line = info[0] + ": " + info[5] + "\n"
                 log_text += line
     client.write([player_name, x, y, orient, player_color, message_done])
     if message_done != "":
         line = player_name + ": " + message_done + "\n"
-        if line not in log_text:
-            log_text += line
+        log_text += line
     return "", log_text
 
 def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong):
