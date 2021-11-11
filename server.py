@@ -1,11 +1,10 @@
 import socket
 import threading
 
-HOST = ''
 PORT = 9090
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((HOST, PORT))
+server.bind(('', PORT))
 
 server.listen()
 
@@ -21,14 +20,15 @@ def handle(client):
 			message = client.recv(4096)
 			broadcast(message)
 		except ConnectionResetError:
+			print(f"Disconnected with {str(client)}!")
 			clients.remove(client)
 			client.close()
 			break
 
 def receive():
 	while True:
-		client, address = server.accept()
-		print(f"Connected with {str(address)}!")
+		client, _ = server.accept()
+		print(f"Connected with {str(client)}!")
 
 		clients.append(client)
 
