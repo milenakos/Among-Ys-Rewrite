@@ -3,6 +3,8 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite/badge)](https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite)
 [![Discord server](https://img.shields.io/discord/776546039804330005.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/EuDqUCkDf6)
 
+[![forthebadge](https://forthebadge.com/images/badges/works-on-my-machine.svg)](https://forthebadge.com)
+
 Python Among Us spin-off.
 Learn more:
 https://among-ys.glitch.me
