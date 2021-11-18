@@ -190,8 +190,10 @@ def main(player_name, player_color, is_multiplayer, d):
              "J'zargo", "lucyy", "m(._.)mV2", "Mr. snowmanfan20_YT", "normal", "exotic", "Stoned", "Allleeeeeccccccc",
              "ThisIsMyUsername", "tiddcunt", "Vana_Ungkap", "WarNoodleZ", "Wut", "Yuuta Togashi", "Zatrex", "FedeGamer"]
     
-    colors = ["Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime",
-             "Maroon", "Rose", "Banana", "Gray", "Tan", "Coral", "Olive", "Fortegreen"]
+    colors = {"Red": (179, 10, 32), "Blue": (19, 46, 209), "Green": (17, 127, 44), "Pink": (237, 84, 186), "Orange": (239, 125, 14),
+             "Yellow": (246, 246, 88), "Black": (62, 71, 78), "White": (214, 224, 240), "Purple": (107, 49, 188), "Brown": (113, 73, 30),
+             "Cyan": (56, 254, 219), "Lime": (80, 239, 57), "Maroon": (108, 43, 61), "Rose": (236, 192, 211), "Banana": (254, 253, 189),
+             "Gray": (112, 132, 151), "Tan": (146, 135, 118), "Coral": (236, 117, 120), "Olive": (97, 114, 24), "Fortegreen": (29, 151, 83)}
     
     moves, bots, players, loading2 = [], [], [], []
 
@@ -254,17 +256,17 @@ def main(player_name, player_color, is_multiplayer, d):
             else:
                 logging.info("Loading bots...")
                 loading = [font.render("Loading bots...", 5, (255, 255, 255))]
-        elif ticks == 4 and not is_multiplayer:
-            if not do_write:
-                for i in range(0, len(os.listdir(get_path("moves")))):
-                    bot = Bot(i, colors, names, ticks)
-                    bots.append(bot)
-            logging.info("Loading text...")
-            loading = [font.render("Loading text...", 5, (255, 255, 255))]
-        elif ticks == 4:
+        elif ticks == 4 and is_multiplayer:
             HOST, PORT = is_multiplayer.split(":")
 
             client = Client(HOST, int(PORT))
+            client.write([player_name, player_color])
+            logging.info("Loading text...")
+            loading = [font.render("Loading text...", 5, (255, 255, 255))]
+        elif ticks == 4 and not is_multiplayer:
+            if not do_write:
+                for i in range(0, len(os.listdir(get_path("moves")))):
+                    bot = Bot(i, list(colors.keys()), names, ticks)
             logging.info("Loading text...")
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 5 and not is_multiplayer:
@@ -274,19 +276,29 @@ def main(player_name, player_color, is_multiplayer, d):
             counter.blit(textSurf, [0, 0])
             counter.set_colorkey((0,0,0))
         if ticks == 5:
-            log_text = ""
+            log_text = []
             if d == True:
-                log_text += "Failed to start logging.\n"
+                log_text.append("Failed to start logging.")
             elif version and version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
-                log_text += "New version of Among Ys Rewrite is available. Please upgrade your game.\n"
+                log_text.append("New version of Among Ys Rewrite is available. Please upgrade your game.")
         
         if ticks > 5:
             loading = []
             loading2 = []
-            for i in log_text.splitlines()[::-1]:
-                loading.append(font.render(i, 5, (255, 255, 255)))
-                loading2.append(font.render(i, 5, (0, 0, 0)))
+            for i in log_text[::-1]:
+                try:
+                    a = i.split(":")
+                    colora = (255, 255, 255)
+                    for j in players:
+                        if j.username == a[0]:
+                            colora = j.color
+                    if a[0] == player_name:
+                        colora = player_color
+                except Exception:
+                    colora = (255, 255, 255)
+                loading.append(font.render(i[:-1], 5, colora))
+                loading2.append(font.render(i[:-1], 5, (0, 0, 0)))
 
         render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, loading2, chat_opened, message_text, font)
 
@@ -364,25 +376,23 @@ def move_player(do_ping_pong, change, ticks, is_multiplayer, orient, x, y, clien
 
 def update_multiplayer(client, player_name, player_color, players, x, y, orient, message_done, log_text):
     info = client.get()
+    print(info)
     if info != None:
-        if isinstance(info, list) and info[0] != player_name and info[4] != player_color:
-            found = False
+        if isinstance(info, list) and len(info) == 2 and info[0] != player_name and info[1] != player_color:
+            new = Crew(info[1], info[0])
+            players.append(new)
+        if isinstance(info, list) and len(info) == 4:
             for j in players:
-                if info[0] == j.nickname and info[4] == j.color:
+                if info[0] == j.nickname:
                     j.update(info[3], info[1], info[2])
-                    found = True
                     break
-            if not found:
-                new = Crew(info[4], info[0])
-                players.append(new)
-                new.update(info[3], info[1], info[2])
-            if info[5] != "":
-                line = info[0] + ": " + info[5] + "\n"
-                log_text += line
-    client.write([player_name, x, y, orient, player_color, message_done])
+            if info[4] != "":
+                line = info[0] + ": " + info[4] + "\n"
+                log_text.append(line)
+    client.write([player_name, x, y, orient, message_done])
     if message_done != "":
         line = player_name + ": " + message_done + "\n"
-        log_text += line
+        log_text.append(line)
     return "", log_text
 
 def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong):
