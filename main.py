@@ -489,12 +489,21 @@ def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
         kill_possible = False
     return x, y, kill_possible, counter
 
-def character_limit(entry_text):
-    if len(entry_text.get()) > 15:
+def character_limit(nickname):
+    if len(nickname.get()) > 15:
         logging.info("Over 15 characters, limiting...")
-        entry_text.set(entry_text.get()[:15])
+        nickname.set(nickname.get()[:15])
 
 def settings():
+    if not os.path.exists(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite"):
+        os.makedirs(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite")
+    try:
+        pref = json.load(open(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite\\settings.json", "r"))
+    except Exception:
+        logging.warning('Failed to load settings.json!')
+        pref = False
+
+
     master = tk.Tk()
     master.title("Settings")
     logging.info('Loaded! Adding buttons...')
@@ -502,13 +511,19 @@ def settings():
     tk.Label(master, text="Your name").grid(row=1, column=0)
     tk.Label(master, text="Your color").grid(row=2, column=0)
     tk.Label(master, text="Multiplayer IP").grid(row=3, column=0)
-    variable = tk.StringVar(master)
-    variable.set("Red")
-    entry_text = tk.StringVar()
+    
+    color = tk.StringVar()
+    nickname = tk.StringVar()
     ip = tk.StringVar()
-    mp = tk.IntVar()
-    e1 = tk.Entry(master, textvariable = entry_text)
-    e2 = tk.OptionMenu(master, variable, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
+
+    color.set("Red")
+    if pref:
+        ip.set(pref["ip"])
+        nickname.set(pref["nickname"])
+        color.set(pref["color"])
+
+    e1 = tk.Entry(master, textvariable = nickname)
+    e2 = tk.OptionMenu(master, color, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
               "Tan", "Coral", "Olive", "Fortegreen")
     e3 = tk.Entry(master, textvariable = ip)
     e1.grid(row=1, column=1)
@@ -522,11 +537,18 @@ def settings():
           text='Quit',
           width=15,
           command=master.destroy).grid(row=4, column=0)
+
     logging.info('Done! Waiting for input...')
-    entry_text.trace("w", lambda *args: character_limit(entry_text))
+    nickname.trace("w", lambda *args: character_limit(nickname))
     tk.mainloop()
     logging.info('Got input! Closing settings...')
-    return master, entry_text.get(), variable.get(), ip.get()
+
+    try:
+        json.dump({"ip": ip.get(), "nickname": nickname.get(), "color": color.get()}, open(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite\\settings.json", "w"))
+    except Exception:
+       logging.warning('Failed to save settings.json!')
+
+    return master, nickname.get(), color.get(), ip.get()
 
 if __name__ == "__main__":
     d = False
