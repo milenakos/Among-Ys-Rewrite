@@ -167,7 +167,7 @@ def ping_pong(do_ping_pong, new_x, new_y, change):
     return new_x, new_y
 
 def main(player_name, player_color, is_multiplayer, d):
-    v = "v2.3.0"
+    v = "v2.3.1"
 
     logging.info("Loading pygame...")
     
