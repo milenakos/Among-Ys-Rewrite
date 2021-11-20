@@ -546,7 +546,7 @@ def settings():
     tk.Button(master, 
           text='Quit',
           width=15,
-          command=quit).grid(row=4, column=0)
+          command=sys.exit).grid(row=4, column=0)
 
     logging.info('Done! Waiting for input...')
     nickname.trace("w", lambda *args: character_limit(nickname))
