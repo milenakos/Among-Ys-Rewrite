@@ -542,11 +542,11 @@ def settings():
     tk.Button(master, 
           text='Start',
           width=15,
-          command=master.quit).grid(row=4, column=1)
+          command=master.destroy).grid(row=4, column=1)
     tk.Button(master, 
           text='Quit',
           width=15,
-          command=master.destroy).grid(row=4, column=0)
+          command=quit).grid(row=4, column=0)
 
     logging.info('Done! Waiting for input...')
     nickname.trace("w", lambda *args: character_limit(nickname))
@@ -556,9 +556,8 @@ def settings():
     try:
         json.dump({"ip": ip.get(), "nickname": nickname.get(), "color": color.get()}, open(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite\\settings.json", "w"))
     except Exception:
-       logging.warning('Failed to save settings.json!')
-
-    return master, nickname.get(), color.get(), ip.get()
+        logging.warning('Failed to save settings.json!')
+    return nickname.get(), color.get(), ip.get()
 
 if __name__ == "__main__":
     d = False
@@ -572,9 +571,7 @@ if __name__ == "__main__":
         d = True
     try:
         logging.info('Loading settings window...')
-        master, a, b, c = settings()
-        logging.info('Destorying window...')
-        master.destroy()
+        a, b, c = settings()
         logging.info('Starting game...')
         if c == "l":
             c = "127.0.0.1:9090"
