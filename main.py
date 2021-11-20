@@ -581,5 +581,19 @@ if __name__ == "__main__":
         if e == "can't invoke \"destroy\" command: application has been destroyed":
             logging.info("Aplication exit by user, no errors.")
         else:
-            logging.fatal(str(traceback.format_exc()))
+            error = str(traceback.format_exc())
+
+            logging.fatal(error)
+            print(error)
             pygame.quit()
+
+            logging.info("Starting rendering crash report window...")
+
+            master = tk.Tk()
+            master.title("Crash Report")
+            
+            logging.info('Loaded! Adding text...')
+            tk.Label(master, text=f"Skill issue! Your game crashed. Here is crash report cus why not:\n\n{error}\n\nFull crash log with details can be seen in log.txt file", justify = "left").pack(pady=5)
+
+            logging.info('Done!')
+            tk.mainloop()
