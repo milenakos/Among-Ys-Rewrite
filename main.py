@@ -167,6 +167,11 @@ def ping_pong(do_ping_pong, new_x, new_y, change):
     return new_x, new_y
 
 def main(player_name, player_color, is_multiplayer, d):
+
+    ############################
+    # DEFINE STUFF
+    ############################
+
     v = "v2.3.1"
 
     logging.info("Loading pygame...")
@@ -197,6 +202,10 @@ def main(player_name, player_color, is_multiplayer, d):
     
     moves, bots, players, loading2 = [], [], [], []
 
+    ############################
+    # INIT
+    ############################
+
     logging.info("Creating game window...")
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Among Ys Rewrite")
@@ -212,18 +221,159 @@ def main(player_name, player_color, is_multiplayer, d):
     screen.blit(loading, (5, 680))
     
     pygame.display.flip()
-
+    
+    ############################
+    # MAIN LOOP
+    ############################
+    
     while running:
         clock.tick(FPS)
         ticks += 1
         
-        do_kill, running, message_text, message_done, do_ping_pong, chat_opened = check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done, do_ping_pong)
+        ############################
+        # CHECK FOR INPUTS
+        ############################
+
+        do_kill = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                logging.info("Got exit signal.")
+                running = False
+            
+            elif event.type == pygame.MOUSEBUTTONDOWN and not is_multiplayer:
+                if event.button == 1 and kill_btn.collidepoint(event.pos) and not chat_opened:
+                    logging.info("Got mouse press signal.")
+                    do_kill = True
+            
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q and not is_multiplayer:
+                    if not chat_opened:
+                        logging.info("Got Q press signal.")
+                        do_kill = True
+                
+                if event.key == pygame.K_p and not is_multiplayer and not chat_opened:
+                    logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
+                    if do_ping_pong:
+                        do_ping_pong = False
+                    else:
+                        do_ping_pong = True
+                
+                if chat_opened:
+                    if event.key == pygame.K_RETURN:
+                        logging.info(f"{message_text} was sent by me!")
+                        message_done = message_text
+                        message_text = ''
+                    elif event.key == pygame.K_BACKSPACE:
+                        message_text = message_text[:-1]
+                    else:
+                        message_text = str(message_text) + event.unicode
+                
+                if event.key == pygame.K_RETURN and is_multiplayer:
+                    if chat_opened:
+                        chat_opened = False
+                    else:
+                        chat_opened = True
 
         if ticks != 1:
-            if do_kill and kill_possible and not is_multiplayer:
-                x, y, kill_possible, counter = kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter)
 
-            do_ping_pong, orient, x, y, message_done, log_text = move_player(do_ping_pong, change, ticks, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, message_done, log_text)
+            ############################
+            # KILL BOTS
+            ############################
+
+            if do_kill and kill_possible and not is_multiplayer:
+                logging.info("Killing...")
+                dists = []
+                for i in bots:
+                    dists.append(i.distance_from_center())
+                if min(dists) <= 270 and ticks - kill_save > 120:
+                    enemy_ind = dists.index(min(dists))
+                    enemy = bots[enemy_ind]
+                    x, y = enemy.get_coords()
+                    logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
+                    bots.pop(enemy_ind)
+                    kill_save = ticks
+                    logging.info("%s people left, rendering counter.", str(len(bots) + 1))
+                    textSurf = font.render("People left: " + str(len(bots) + 1), 5, (255, 255, 255))
+                    counter = pygame.Surface((1280, 720))
+                    counter.blit(textSurf, [0, 0])
+                    counter.set_colorkey((0,0,0))
+                else:
+                    logging.info("No bots in kill distance or kill cooldown is active.")
+                do_kill = False
+                if len(bots) == 0:
+                    logging.info("All bots killed.")
+                    kill_possible = False
+
+            ############################
+            # MOVE PLAYER
+            ############################
+
+            keys = pygame.key.get_pressed()
+
+            new_x = new_y = 0
+
+            if do_ping_pong:
+                new_x, new_y = ping_pong(do_ping_pong, new_x, new_y, change)
+            elif not chat_opened:
+                if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+                    new_x += change
+                if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+                    new_x -= change
+
+                if keys[pygame.K_w] or keys[pygame.K_UP]:
+                    new_y += change
+                if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+                    new_y -= change
+
+            if new_x > 0:
+                orient = "Left"
+            elif new_x < 0:
+                orient = "Right"
+
+            x_save, y_save = x, y
+
+            x += new_x
+            y += new_y
+
+            if do_write and not is_multiplayer:
+                moves.append([x, y, orient])
+
+            if walls_mask.overlap(hitbox_mask, (-x, -y)):
+                x, y = x_save, y_save
+                if do_ping_pong:
+                    old_super = do_ping_pong
+                    while do_ping_pong == old_super:
+                        do_ping_pong = random.randint(1, 8)
+                    logging.info("New ping pong direction, %s.", do_ping_pong)
+
+            ############################
+            # UPDATE MULTIPLAYER
+            ############################
+
+            if ticks > 4 and is_multiplayer:
+                info = client.get()
+                print(info)
+                if info != None:
+                    if isinstance(info, list) and len(info) == 2 and info[0] != player_name and info[1] != player_color:
+                        new = Crew(info[1], info[0])
+                        players.append(new)
+                    if isinstance(info, list) and len(info) == 4:
+                        for j in players:
+                            if info[0] == j.nickname:
+                                j.update(info[3], info[1], info[2])
+                                break
+                        if info[4] != "":
+                            line = info[0] + ": " + info[4] + "\n"
+                            log_text.append(line)
+                client.write([player_name, x, y, orient, message_done])
+                if message_done != "":
+                    line = player_name + ": " + message_done + "\n"
+                    log_text.append(line)
+                    message_done = ""
+
+        ############################
+        # LOADINGS
+        ############################
 
         if ticks == 1:
             logging.info("Loading images...")
@@ -283,6 +433,10 @@ def main(player_name, player_color, is_multiplayer, d):
                 logging.warning("Using old version of Among Ys Rewrite.")
                 log_text.append("New version of Among Ys Rewrite is available. Please upgrade your game.")
         
+        ############################
+        # UPDATE CHAT
+        ############################
+
         if ticks > 5:
             loading = []
             loading2 = []
@@ -300,7 +454,52 @@ def main(player_name, player_color, is_multiplayer, d):
                 loading.append(font.render(i[:-1], 5, colora))
                 loading2.append(font.render(i[:-1], 5, (0, 0, 0)))
 
-        render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, loading2, chat_opened, message_text, font)
+        ############################
+        # RENDER
+        ############################
+
+        screen.fill((0, 0, 0))
+        chat_offset = 0
+
+        if ticks > 4:
+            screen.blit(back, (x, y))
+            for i in bots:
+                i.update(x, y, screen, orient)
+            for i in players:
+                i.draw(screen, x, y)
+            if not is_multiplayer:
+                screen.blit(counter, (0, 0))
+                if kill_possible:
+                    screen.blit(kill, kill_btn)
+            crew.update(orient)
+            crew.draw(screen)
+            walls.get_rect().center = (x, y)
+        if ticks > 4 and chat_opened:
+            pygame.draw.rect(screen, (255,255,255), (10, 660, 500, 50))
+            pygame.draw.rect(screen, (0,0,0), (10, 660, 500, 50), 5)
+            textSurf = font.render(str(message_text) + "|", 5, (0, 0, 0))
+            message = pygame.Surface((1280, 720))
+            message.fill((255,255,255))
+            message.blit(textSurf, [0, 0])
+            message.set_colorkey((255,255,255))
+            screen.blit(message, (20, 660))
+            chat_offset += 70
+        if loading:
+            for num, i in enumerate(loading2):
+                x = 5
+                y = 680 - chat_offset - (num * 35)
+                screen.blit(i, (x + 2, y + 2))
+                screen.blit(i, (x + 2, y - 2))
+                screen.blit(i, (x - 2, y + 2))
+                screen.blit(i, (x - 2, y - 2))
+                screen.blit(i, (x, y + 2))
+                screen.blit(i, (x, y - 2))
+                screen.blit(i, (x - 2, y))
+                screen.blit(i, (x + 2, y))
+            for num, i in enumerate(loading):
+                screen.blit(i, (5, 680 - chat_offset - (num * 35)))
+
+        pygame.display.flip()
 
     if do_write:
         file = open("moves\\file.txt", "w")
@@ -313,198 +512,17 @@ def main(player_name, player_color, is_multiplayer, d):
     logging.info("Quitting pygame...")
     pygame.quit()
 
-def render_screen(screen, ticks, back, x, y, bots, orient, players, is_multiplayer, counter, kill_possible, kill, kill_btn, crew, walls, loading, loading2, chat_opened, message_text, font):
-    screen.fill((0, 0, 0))
-    chat_offset = 0
-
-    if ticks > 4:
-        screen.blit(back, (x, y))
-        for i in bots:
-            i.update(x, y, screen, orient)
-        for i in players:
-            i.draw(screen, x, y)
-        if not is_multiplayer:
-            screen.blit(counter, (0, 0))
-            if kill_possible:
-                screen.blit(kill, kill_btn)
-        crew.update(orient)
-        crew.draw(screen)
-        walls.get_rect().center = (x, y)
-    if ticks > 4 and chat_opened:
-        pygame.draw.rect(screen, (255,255,255), (10, 660, 500, 50))
-        pygame.draw.rect(screen, (0,0,0), (10, 660, 500, 50), 5)
-        textSurf = font.render(str(message_text) + "|", 5, (0, 0, 0))
-        message = pygame.Surface((1280, 720))
-        message.fill((255,255,255))
-        message.blit(textSurf, [0, 0])
-        message.set_colorkey((255,255,255))
-        screen.blit(message, (20, 660))
-        chat_offset += 70
-    if loading:
-        for num, i in enumerate(loading2):
-            x = 5
-            y = 680 - chat_offset - (num * 35)
-            screen.blit(i, (x + 2, y + 2))
-            screen.blit(i, (x + 2, y - 2))
-            screen.blit(i, (x - 2, y + 2))
-            screen.blit(i, (x - 2, y - 2))
-            screen.blit(i, (x, y + 2))
-            screen.blit(i, (x, y - 2))
-            screen.blit(i, (x - 2, y))
-            screen.blit(i, (x + 2, y))
-        for num, i in enumerate(loading):
-            screen.blit(i, (5, 680 - chat_offset - (num * 35)))
-
-    pygame.display.flip()
-
-def move_player(do_ping_pong, change, ticks, is_multiplayer, orient, x, y, client, player_name, player_color, players, do_write, moves, walls_mask, hitbox_mask, chat_opened, message_done, log_text):
-    do_ping_pong, new_x, new_y, orient = do_movement(do_ping_pong, change, ticks, is_multiplayer, orient, chat_opened)
-
-    x_save, y_save = x, y
-
-    x += new_x
-    y += new_y
-
-    if ticks > 4 and is_multiplayer:
-        message_done, log_text = update_multiplayer(client, player_name, player_color, players, x, y, orient, message_done, log_text)
-
-    if do_write and not is_multiplayer:
-        moves.append([x, y, orient])
-
-    x, y, do_ping_pong = collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong)
-    return do_ping_pong, orient, x, y, message_done, log_text
-
-def update_multiplayer(client, player_name, player_color, players, x, y, orient, message_done, log_text):
-    info = client.get()
-    print(info)
-    if info != None:
-        if isinstance(info, list) and len(info) == 2 and info[0] != player_name and info[1] != player_color:
-            new = Crew(info[1], info[0])
-            players.append(new)
-        if isinstance(info, list) and len(info) == 4:
-            for j in players:
-                if info[0] == j.nickname:
-                    j.update(info[3], info[1], info[2])
-                    break
-            if info[4] != "":
-                line = info[0] + ": " + info[4] + "\n"
-                log_text.append(line)
-    client.write([player_name, x, y, orient, message_done])
-    if message_done != "":
-        line = player_name + ": " + message_done + "\n"
-        log_text.append(line)
-    return "", log_text
-
-def collision_check(walls_mask, hitbox_mask, x, y, x_save, y_save, do_ping_pong):
-    if walls_mask.overlap(hitbox_mask, (-x, -y)):
-        x, y = x_save, y_save
-        if do_ping_pong:
-            old_super = do_ping_pong
-            while do_ping_pong == old_super:
-                do_ping_pong = random.randint(1, 8)
-            logging.info("New ping pong direction, %s.", do_ping_pong)
-    return x, y, do_ping_pong
-
-def do_movement(do_ping_pong, change, ticks, is_multiplayer, orient, chat_opened):
-    keys = pygame.key.get_pressed()
-
-    new_x = new_y = 0
-
-    new_x, new_y = calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened)
-
-    if new_x > 0:
-        orient = "Left"
-    elif new_x < 0:
-        orient = "Right"
-    return do_ping_pong, new_x, new_y, orient
-
-def calcluate_coordinates_change(do_ping_pong, keys, change, new_x, new_y, chat_opened):
-    if do_ping_pong:
-        new_x, new_y = ping_pong(do_ping_pong, new_x, new_y, change)
-    elif not chat_opened:
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            new_x += change
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            new_x -= change
-
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            new_y += change
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            new_y -= change
-    return new_x, new_y
-
-def check_for_input(is_multiplayer, kill_btn, running, chat_opened, message_text, message_done, do_ping_pong):
-    do_kill = False
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            logging.info("Got exit signal.")
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and not is_multiplayer:
-            if event.button == 1 and kill_btn.collidepoint(event.pos) and not chat_opened:
-                logging.info("Got mouse press signal.")
-                do_kill = True
-        elif event.type == pygame.KEYDOWN:
-            do_ping_pong, message_text, chat_opened, do_kill, message_done = keydown_functions(event, is_multiplayer, chat_opened, do_ping_pong, message_text, do_kill, message_done)
-    return do_kill, running, message_text, message_done, do_ping_pong, chat_opened
-
-def keydown_functions(event, is_multiplayer, chat_opened, do_ping_pong, message_text, do_kill, message_done):
-    if event.key == pygame.K_q and not is_multiplayer:
-        if not chat_opened:
-            logging.info("Got Q press signal.")
-            do_kill = True
-    if event.key == pygame.K_p and not is_multiplayer and not chat_opened:
-        logging.info("Ping pong state was %s, now vice-versa.", str(do_ping_pong))
-        if do_ping_pong:
-            do_ping_pong = False
-        else:
-            do_ping_pong = True
-    if chat_opened:
-        if event.key == pygame.K_RETURN:
-            logging.info(f"{message_text} was sent by me!")
-            message_done = message_text
-            message_text = ''
-        elif event.key == pygame.K_BACKSPACE:
-            message_text = message_text[:-1]
-        else:
-            message_text = str(message_text) + event.unicode
-    if event.key == pygame.K_RETURN and is_multiplayer:
-        if chat_opened:
-            chat_opened = False
-        else:
-            chat_opened = True
-    return do_ping_pong, message_text, chat_opened, do_kill, message_done
-
-def kill_bot(bots, ticks, kill_save, font, kill_possible, x, y, counter):
-    logging.info("Killing...")
-    dists = []
-    for i in bots:
-        dists.append(i.distance_from_center())
-    if min(dists) <= 270 and ticks - kill_save > 120:
-        enemy_ind = dists.index(min(dists))
-        enemy = bots[enemy_ind]
-        x, y = enemy.get_coords()
-        logging.info("Bot %s was killed, with name %s.", enemy_ind, enemy.my_name)
-        bots.pop(enemy_ind)
-        kill_save = ticks
-        logging.info("%s people left, rendering counter.", str(len(bots) + 1))
-        textSurf = font.render("People left: " + str(len(bots) + 1), 5, (255, 255, 255))
-        counter = pygame.Surface((1280, 720))
-        counter.blit(textSurf, [0, 0])
-        counter.set_colorkey((0,0,0))
-    else:
-        logging.info("No bots in kill distance or kill cooldown is active.")
-    do_kill = False
-    if len(bots) == 0:
-        logging.info("All bots killed.")
-        kill_possible = False
-    return x, y, kill_possible, counter
-
 def character_limit(nickname):
     if len(nickname.get()) > 15:
         logging.info("Over 15 characters, limiting...")
         nickname.set(nickname.get()[:15])
 
-def settings():
+def settings(d):
+
+    ############################
+    # LOAD SETTINGS
+    ############################
+
     if not os.path.exists(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite"):
         os.makedirs(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite")
     try:
@@ -557,9 +575,18 @@ def settings():
         json.dump({"ip": ip.get(), "nickname": nickname.get(), "color": color.get()}, open(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite\\settings.json", "w"))
     except Exception:
         logging.warning('Failed to save settings.json!')
-    return nickname.get(), color.get(), ip.get()
+    
+    logging.info('Starting game...')
+    c = ip.get()
+    if c == "l":
+        c = "127.0.0.1:9090"
+    main(nickname.get(), color.get(), c, d)
 
 if __name__ == "__main__":
+    ############################
+    # CREATE LOGS
+    ############################
+
     d = False
     try:
         os.remove("log.txt")
@@ -569,13 +596,14 @@ if __name__ == "__main__":
         logging.warning('Failed to delete log file!')
     except PermissionError:
         d = True
+
+    ############################
+    # CRASH REPORTER
+    ############################
+
     try:
         logging.info('Loading settings window...')
-        a, b, c = settings()
-        logging.info('Starting game...')
-        if c == "l":
-            c = "127.0.0.1:9090"
-        main(a, b, c, d)
+        settings(d)
     except Exception as e:
         logging.warning('Got error! Analysing...')
         if e == "can't invoke \"destroy\" command: application has been destroyed":
