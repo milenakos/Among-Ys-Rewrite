@@ -166,7 +166,7 @@ def ping_pong(do_ping_pong, new_x, new_y, change):
         new_x += change
     return new_x, new_y
 
-def main(player_name, player_color, is_multiplayer, d):
+def game(player_name, player_color, is_multiplayer, d):
 
     ############################
     # DEFINE STUFF
@@ -580,9 +580,9 @@ def settings(d):
     c = ip.get()
     if c == "l":
         c = "127.0.0.1:9090"
-    main(nickname.get(), color.get(), c, d)
+    game(nickname.get(), color.get(), c, d)
 
-if __name__ == "__main__":
+def main():
     ############################
     # CREATE LOGS
     ############################
@@ -625,3 +625,6 @@ if __name__ == "__main__":
 
             logging.info('Done!')
             tk.mainloop()
+
+if __name__ == "__main__":
+    main()
