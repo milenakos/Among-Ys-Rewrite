@@ -266,7 +266,7 @@ def main(player_name, player_color, is_multiplayer, d):
         elif ticks == 4 and not is_multiplayer:
             if not do_write:
                 for i in range(0, len(os.listdir(get_path("moves")))):
-                    bot = Bot(i, list(colors.keys()), names, ticks)
+                    bots.append(Bot(i, list(colors.keys()), names, ticks))
             logging.info("Loading text...")
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 5 and not is_multiplayer:
