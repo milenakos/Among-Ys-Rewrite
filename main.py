@@ -194,6 +194,8 @@ def game(player_name, player_color, is_multiplayer, d):
     screen.fill((0, 0, 0))
     
     screen.blit(loading, (5, 680))
+
+    pygame.display.set_icon(pygame.image.load(get_path("img/icon.png")))
     
     pygame.display.flip()
     
@@ -531,6 +533,10 @@ def settings(d):
 
     master = tk.Tk()
     master.title("Settings")
+
+    icon = tk.PhotoImage(file=get_path("img\icon.png"))
+    master.iconphoto(True,icon)
+
     logging.info('Loaded! Adding buttons...')
     tk.Label(master, text="Among Ys Settings").grid(row=0)
     tk.Label(master, text="Your name").grid(row=1, column=0)
