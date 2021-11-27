@@ -141,31 +141,6 @@ class Bot(pygame.sprite.Sprite):
     def get_coords(self):
         return self.moves[self.ticks][0], self.moves[self.ticks][1]
 
-def ping_pong(do_ping_pong, new_x, new_y, change):
-    if do_ping_pong == True:
-        do_ping_pong = random.randint(1, 8)
-    if do_ping_pong == 1:
-        new_x += change
-    elif do_ping_pong == 2:
-        new_x -= change
-    elif do_ping_pong == 3:
-        new_y += change
-    elif do_ping_pong == 4:
-        new_y -= change
-    elif do_ping_pong == 5:
-        new_y -= change
-        new_x -= change
-    elif do_ping_pong == 6:
-        new_y -= change
-        new_x += change
-    elif do_ping_pong == 7:
-        new_y += change
-        new_x -= change
-    elif do_ping_pong == 8:
-        new_y += change
-        new_x += change
-    return new_x, new_y
-
 def game(player_name, player_color, is_multiplayer, d):
 
     ############################
@@ -313,7 +288,29 @@ def game(player_name, player_color, is_multiplayer, d):
             new_x = new_y = 0
 
             if do_ping_pong:
-                new_x, new_y = ping_pong(do_ping_pong, new_x, new_y, change)
+                if do_ping_pong == True:
+                    do_ping_pong = random.randint(1, 8)
+                if do_ping_pong == 1:
+                    new_x += change
+                elif do_ping_pong == 2:
+                    new_x -= change
+                elif do_ping_pong == 3:
+                    new_y += change
+                elif do_ping_pong == 4:
+                    new_y -= change
+                elif do_ping_pong == 5:
+                    new_y -= change
+                    new_x -= change
+                elif do_ping_pong == 6:
+                    new_y -= change
+                    new_x += change
+                elif do_ping_pong == 7:
+                    new_y += change
+                    new_x -= change
+                elif do_ping_pong == 8:
+                    new_y += change
+                    new_x += change
+                return new_x, new_y
             elif not chat_opened:
                 if keys[pygame.K_a] or keys[pygame.K_LEFT]:
                     new_x += change
