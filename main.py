@@ -385,46 +385,41 @@ def game(player_name, player_color, is_multiplayer, d):
             kill = pygame.image.load(get_path("img/kill.png"))
             kill_btn = kill.get_rect()
             kill_btn.center = (1200, 640)
+
+            back = pygame.image.load(get_path('img/skeld.png'))
+            crew = Crew(player_color, player_name)
+
             logging.info("Checking for updates...")
             loading = [font.render("Checking for updates...", 5, (255, 255, 255))]
         elif ticks == 2:
             try:
-                latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
-                version = json.loads(latest)["name"]
+                latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/tags").text
+                version = json.loads(latest)[0]["name"]
             except Exception as e:
                 logging.warning("Failed to check version.")
                 version = None
-            logging.info("Loading map...")
-            loading = [font.render("Loading map...", 5, (255, 255, 255))]
-        elif ticks == 3:
-            back = pygame.image.load(get_path('img/skeld.png'))
-            crew = Crew(player_color, player_name)
-            if is_multiplayer:
-                logging.info("Connecting to server...")
-                loading = [font.render("Connecting to server...", 5, (255, 255, 255))]
-            else:
-                logging.info("Loading bots...")
-                loading = [font.render("Loading bots...", 5, (255, 255, 255))]
-        elif ticks == 4 and is_multiplayer:
+            logging.info("Loading players...")
+            loading = [font.render("Loading players...", 5, (255, 255, 255))]
+        elif ticks == 3 and is_multiplayer:
             HOST, PORT = is_multiplayer.split(":")
 
             client = Client(HOST, int(PORT))
             client.write([player_name, player_color])
             logging.info("Loading text...")
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
-        elif ticks == 4 and not is_multiplayer:
+        elif ticks == 3 and not is_multiplayer:
             if not do_write:
                 for i in range(0, len(os.listdir(get_path("moves")))):
                     bots.append(Bot(i, list(colors.keys()), names, ticks))
             logging.info("Loading text...")
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
-        elif ticks == 5 and not is_multiplayer:
+        elif ticks == 4 and not is_multiplayer:
             logging.info("Rendering counter...")
             textSurf = font1.render("People left: " + str(len(bots) + 1), 5, (255, 255, 255))
             counter = pygame.Surface((1280, 720))
             counter.blit(textSurf, [0, 0])
             counter.set_colorkey((0,0,0))
-        if ticks == 5:
+        if ticks == 4:
             log_text = []
             if d == True:
                 log_text.append("Failed to start logging.")
