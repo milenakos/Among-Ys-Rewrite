@@ -92,8 +92,11 @@ class Crew(pygame.sprite.Sprite):
         self.y = 360
 
         self.color = colors
-        self.nickname = name
-        self.name = Name(name, True)
+        if name != "":
+            self.nickname = name
+            self.name = Name(name, True)
+        else:
+            self.name = False
 
     def update(self, orient, *args):
         self.orient = orient
