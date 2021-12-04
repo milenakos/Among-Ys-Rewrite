@@ -557,7 +557,12 @@ def settings(d):
     e3 = tk.Entry(master, textvariable = ip)
     e1.grid(row=1, column=1)
     e2.grid(row=2, column=1)
-    e3.grid(row=3, column=1)    
+    e3.grid(row=3, column=1) 
+
+    def quit_tk():
+        master.destroy()
+        sys.exit()
+
     tk.Button(master, 
           text='Start',
           width=15,
@@ -565,7 +570,9 @@ def settings(d):
     tk.Button(master, 
           text='Quit',
           width=15,
-          command=sys.exit).grid(row=4, column=0)
+          command=quit_tk).grid(row=4, column=0)
+
+    master.protocol("WM_DELETE_WINDOW", quit_tk)
 
     logging.info('Done! Waiting for input...')
     nickname.trace("w", lambda *args: character_limit(nickname))
