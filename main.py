@@ -639,7 +639,7 @@ def main():
             master.title("Crash Report")
             
             logging.info('Loaded! Adding text...')
-            tk.Label(master, text=f"Skill issue! Your game crashed. Here is crash report cus why not:\n\n{error}\n\nFull crash log with details can be seen in log.txt file", justify = "left").pack(pady=5)
+            tk.Label(master, text=f"Skill issue! Your game crashed.\n\n{error}\n\nFull crash log with details can be seen in log.txt file", justify = "left").pack(pady=5)
 
             logging.info('Done!')
             tk.mainloop()
