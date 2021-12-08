@@ -493,16 +493,16 @@ def game(player_name, player_color, is_multiplayer, d):
             chat_offset += 70
         if loading:
             for num, i in enumerate(loading2):
-                x = 5
-                y = 680 - chat_offset - (num * 35)
-                screen.blit(i, (x + 2, y + 2))
-                screen.blit(i, (x + 2, y - 2))
-                screen.blit(i, (x - 2, y + 2))
-                screen.blit(i, (x - 2, y - 2))
-                screen.blit(i, (x, y + 2))
-                screen.blit(i, (x, y - 2))
-                screen.blit(i, (x - 2, y))
-                screen.blit(i, (x + 2, y))
+                x_ = 5
+                y_ = 680 - chat_offset - (num * 35)
+                screen.blit(i, (x_ + 2, y_ + 2))
+                screen.blit(i, (x_ + 2, y_ - 2))
+                screen.blit(i, (x_ - 2, y_ + 2))
+                screen.blit(i, (x_ - 2, y_ - 2))
+                screen.blit(i, (x_, y_ + 2))
+                screen.blit(i, (x_, y_ - 2))
+                screen.blit(i, (x_ - 2, y_))
+                screen.blit(i, (x_ + 2, y_))
             for num, i in enumerate(loading):
                 screen.blit(i, (5, 680 - chat_offset - (num * 35)))
 
