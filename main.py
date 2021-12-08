@@ -404,10 +404,18 @@ def game(player_name, player_color, is_multiplayer, d):
             logging.info("Loading players...")
             loading = [font.render("Loading players...", 5, (255, 255, 255))]
         elif ticks == 3 and is_multiplayer:
-            HOST, PORT = is_multiplayer.split(":")
+            try:
+                HOST, PORT = is_multiplayer.split(":")
+                client = Client(HOST, int(PORT))
+                client.write([player_name, player_color])
+                ip_error = False
+            except ValueError:
+                is_multiplayer = False
+                ip_error = True
+                if not do_write:
+                    for i in range(0, len(os.listdir(get_path("moves")))):
+                        bots.append(Bot(i, list(colors.keys()), names, ticks))
 
-            client = Client(HOST, int(PORT))
-            client.write([player_name, player_color])
             logging.info("Loading text...")
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 3 and not is_multiplayer:
@@ -425,10 +433,12 @@ def game(player_name, player_color, is_multiplayer, d):
         if ticks == 4:
             log_text = []
             if d == True:
-                log_text.append("Failed to start logging.")
-            elif version and version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                log_text.append("Failed to start logging..")
+            if ip_error:
+                log_text.append("Invalid IP address! Starting in singleplayer....")
+            if version and version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
-                log_text.append("New version of Among Ys Rewrite is available. Please upgrade your game.")
+                log_text.append("New version of Among Ys Rewrite is available. Please upgrade your game..")
         
         ############################
         # UPDATE CHAT
