@@ -396,8 +396,8 @@ def game(player_name, player_color, is_multiplayer, d):
             loading = [font.render("Checking for updates...", 5, (255, 255, 255))]
         elif ticks == 2:
             try:
-                latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/tags").text
-                version = json.loads(latest)[0]["name"]
+                latest = requests.get("https://api.github.com/repos/milena-kos/Among-Ys-Rewrite/releases/latest").text
+                version = json.loads(latest)["name"]
             except Exception as e:
                 logging.warning("Failed to check version.")
                 version = None
