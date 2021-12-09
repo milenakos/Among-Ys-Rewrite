@@ -357,6 +357,7 @@ def game(player_name, player_color, is_multiplayer, d):
                 info = client.get()
                 print(info)
                 if info != None:
+                    if info[0] !=
                     if isinstance(info, list) and len(info) == 2 and info[0] != player_name and info[1] != player_color:
                         new = Crew(info[1], info[0])
                         players.append(new)
@@ -411,6 +412,7 @@ def game(player_name, player_color, is_multiplayer, d):
                 client.write([player_name, player_color])
                 ip_error = False
             except ValueError:
+                print(is_multiplayer)
                 is_multiplayer = False
                 ip_error = True
                 if not do_write:
@@ -420,6 +422,7 @@ def game(player_name, player_color, is_multiplayer, d):
             logging.info("Loading text...")
             loading = [font.render("Loading text...", 5, (255, 255, 255))]
         elif ticks == 3 and not is_multiplayer:
+            ip_error = False
             if not do_write:
                 for i in range(0, len(os.listdir(get_path("moves")))):
                     bots.append(Bot(i, list(colors.keys()), names, ticks))
@@ -436,7 +439,7 @@ def game(player_name, player_color, is_multiplayer, d):
             if d == True:
                 log_text.append("Failed to start logging..")
             if ip_error:
-                log_text.append("Invalid IP address! Starting in singleplayer....")
+                log_text.append("Server is down! Starting in singleplayer....")
             if version and version != v and getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 logging.warning("Using old version of Among Ys Rewrite.")
                 log_text.append("New version of Among Ys Rewrite is available. Please upgrade your game..")
@@ -541,6 +544,7 @@ def settings(d):
 
 
     master = tk.Tk()
+    c = False
     master.title("Settings")
 
     icon = tk.PhotoImage(file=get_path("img\icon.png"))
@@ -550,38 +554,38 @@ def settings(d):
     tk.Label(master, text="Among Ys Settings").grid(row=0)
     tk.Label(master, text="Your name").grid(row=1, column=0)
     tk.Label(master, text="Your color").grid(row=2, column=0)
-    tk.Label(master, text="Multiplayer IP").grid(row=3, column=0)
     
     color = tk.StringVar()
     nickname = tk.StringVar()
-    ip = tk.StringVar()
 
     color.set("Red")
     if pref:
-        ip.set(pref["ip"])
         nickname.set(pref["nickname"])
         color.set(pref["color"])
 
     e1 = tk.Entry(master, textvariable = nickname)
     e2 = tk.OptionMenu(master, color, "Red", "Blue", "Green", "Pink", "Orange", "Yellow", "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
               "Tan", "Coral", "Olive", "Fortegreen")
-    e3 = tk.Entry(master, textvariable = ip)
     e1.grid(row=1, column=1)
     e2.grid(row=2, column=1)
-    e3.grid(row=3, column=1) 
+
+    def online():
+        nonlocal c
+        c = requests.get("https://among-ys.glitch.me/current-server.html").text
+        master.destroy()
 
     def quit_tk():
         master.destroy()
         sys.exit()
 
     tk.Button(master, 
-          text='Start',
+          text='Online',
           width=15,
-          command=master.destroy).grid(row=4, column=1)
+          command=online).grid(row=4, column=1)
     tk.Button(master, 
-          text='Quit',
+          text='Offline',
           width=15,
-          command=quit_tk).grid(row=4, column=0)
+          command=master.destroy).grid(row=4, column=0)
 
     master.protocol("WM_DELETE_WINDOW", quit_tk)
 
@@ -591,14 +595,11 @@ def settings(d):
     logging.info('Got input! Closing settings...')
 
     try:
-        json.dump({"ip": ip.get(), "nickname": nickname.get(), "color": color.get()}, open(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite\\settings.json", "w"))
+        json.dump({"nickname": nickname.get(), "color": color.get()}, open(os.getenv('LOCALAPPDATA') + "\\Milenakos\\AmongYsRewrite\\settings.json", "w"))
     except Exception:
         logging.warning('Failed to save settings.json!')
     
     logging.info('Starting game...')
-    c = ip.get()
-    if c == "l":
-        c = "127.0.0.1:9090"
     game(nickname.get(), color.get(), c, d)
 
 def main():
