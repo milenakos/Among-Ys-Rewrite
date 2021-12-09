@@ -90,6 +90,7 @@ class Crew(pygame.sprite.Sprite):
         self.rect.center = (640, 360)
         self.x = 640
         self.y = 360
+        self.orient = "Left"
 
         self.color = colors
         if name != "":
