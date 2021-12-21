@@ -16,6 +16,9 @@ Discord server:
 https://discord.gg/tcSpWhnhTX
 
 # Build
+
+You need to have Python 3.8 32-bits
+
 Install requrements:
 
 ```
