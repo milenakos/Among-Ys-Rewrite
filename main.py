@@ -357,18 +357,18 @@ def game(player_name, player_color, is_multiplayer, d):
                 info = client.get()
                 print(info)
                 if info != None:
-                    if info[0] !=
-                    if isinstance(info, list) and len(info) == 2 and info[0] != player_name and info[1] != player_color:
-                        new = Crew(info[1], info[0])
-                        players.append(new)
-                    if isinstance(info, list) and len(info) == 4:
-                        for j in players:
-                            if info[0] == j.nickname:
-                                j.update(info[3], info[1], info[2])
-                                break
-                        if info[4] != "":
-                            line = info[0] + ": " + info[4] + "\n"
-                            log_text.append(line)
+                    if info[0] != player_name:
+                        if isinstance(info, list) and len(info) == 2 and info[0] != player_name and info[1] != player_color:
+                            new = Crew(info[1], info[0])
+                            players.append(new)
+                        if isinstance(info, list) and len(info) == 4:
+                            for j in players:
+                                if info[0] == j.nickname:
+                                    j.update(info[3], info[1], info[2])
+                                    break
+                            if info[4] != "":
+                                line = info[0] + ": " + info[4] + "\n"
+                                log_text.append(line)
                 client.write([player_name, x, y, orient, message_done])
                 if message_done != "":
                     line = player_name + ": " + message_done + "\n"
@@ -407,6 +407,8 @@ def game(player_name, player_color, is_multiplayer, d):
             loading = [font.render("Loading players...", 5, (255, 255, 255))]
         elif ticks == 3 and is_multiplayer:
             try:
+                if is_multiplayer == "":
+                    raise ValueError
                 HOST, PORT = is_multiplayer.split(":")
                 client = Client(HOST, int(PORT))
                 client.write([player_name, player_color])
