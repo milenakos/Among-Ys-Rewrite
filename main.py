@@ -151,7 +151,7 @@ def game(player_name, player_color, is_multiplayer, d):
     # DEFINE STUFF
     ############################
 
-    v = "v2.3.1"
+    v = "v2.3.2"
 
     logging.info("Loading pygame...")
     
