@@ -97,6 +97,8 @@ class Piano_task(pygame.sprite.Sprite):
 					self.note(notes[i])
 					if i == next:
 						self.step += 1
+					else:
+						self.step == 0
 
 				self.image.blit(self.key, (i * 58, 222))
 				self.image.blit(temp, (0, 0))
@@ -105,17 +107,25 @@ class Piano_task(pygame.sprite.Sprite):
 				self.frequency = 0
 			
 			self.rect = self.image.get_rect()
-			if len(self.song) <= self.step:
+			if len(self.song) == self.step:
 				self.finished = True
 			self.rect.center = (640, 360)
 		self.keys = keys
 
 	def play(self):
 		while True:
-			if self.frequency and self.change:
+			if self.finished:
+				break
+			elif self.frequency and self.change:
 				self.change = False
 				y = threading.Thread(target=winsound.Beep, args=(int(self.frequency), 500,))
 				y.start()
+		a = 0
+		while a < 5000: # yes i know my method of sleep is amazing
+			a += 1
+		for i in self.song:
+			self.note(i)
+			winsound.Beep(int(self.frequency), 500)
 
 	def draw(self, screen, *args):
 		screen.blit(self.image, self.rect)
