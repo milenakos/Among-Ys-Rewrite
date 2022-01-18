@@ -1,7 +1,7 @@
 # License for this file:
 #
 #    Among Ys Rewrite
-#    Copyright (C) 2021  Milenakos
+#    Copyright (C) 2022  Milenakos
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
