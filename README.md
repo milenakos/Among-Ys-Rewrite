@@ -1,4 +1,4 @@
-# Among Ys Rewrite <a href="https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite"><img src = "https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite/badge"></a><a href="https://discord.gg/EuDqUCkDf6"><img src = "https://img.shields.io/discord/776546039804330005.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2"></a>
+# Among Ys Rewrite <a href="https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite"><img src = "https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite/badge"></a> <a href="https://discord.gg/EuDqUCkDf6"><img src = "https://img.shields.io/discord/776546039804330005.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2"></a>
 
 <p align="center">
 <img src = "https://forthebadge.com/images/badges/made-with-python.svg">
