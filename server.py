@@ -1,3 +1,6 @@
+# this code isnt stolen from youtube tutorial, how would i do such a thing
+
+
 import socket
 import threading
 
