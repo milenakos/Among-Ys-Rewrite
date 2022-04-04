@@ -69,6 +69,9 @@ class Crew(pygame.sprite.Sprite):
         self.x = 640
         self.y = 360
         self.orient = "Left"
+        self.shadow = pygame.image.load(
+            utils.get_path("img/shadow.png")
+        ).convert_alpha()
 
         self.color = colors
         if name != "":
@@ -87,6 +90,7 @@ class Crew(pygame.sprite.Sprite):
         if args:
             self.rect.center = (args[0] - self.x + 640, args[1] - self.y + 360)
         self.name.update(self.rect.center, screen)
+        screen.blit(self.shadow, (640 - 37, 390))
         if self.orient == "Right":
             screen.blit(self.image, self.rect)
         elif self.orient == "Left":
@@ -109,6 +113,9 @@ class Bot(pygame.sprite.Sprite):
         self.name = Name(self.my_name, False)
         names.remove(self.my_name)
         self.ticks = ticks
+        self.shadow = pygame.image.load(
+            utils.get_path("img/shadow.png")
+        ).convert_alpha()
 
     def update(self, x, y, screen, orient, do_drawing=True):
         self.ticks += 1
@@ -119,6 +126,7 @@ class Bot(pygame.sprite.Sprite):
             )
             if do_drawing:
                 self.name.update(self.rect.center, screen)
+                screen.blit(self.shadow, (self.rect.x, self.rect.y + 80))
                 if self.moves[self.ticks][2] == "Right":
                     screen.blit(self.image, self.rect)
                 else:
@@ -148,10 +156,13 @@ def game(player_name, player_color, is_multiplayer, d):
     pygame.init()
     pygame.font.init()
 
+    vis_coff = 2
+
     logging.info("Loading variables...")
 
     (
         client,
+        rush,
         walls_mask,
         hitbox_mask,
         chat_opened,
@@ -164,6 +175,7 @@ def game(player_name, player_color, is_multiplayer, d):
         log_text,
     ) = (
         0,
+        "",
         0,
         0,
         0,
@@ -176,12 +188,13 @@ def game(player_name, player_color, is_multiplayer, d):
         "",
     )  # to fix "Referenced before assigment" errors
 
-    do_kill, do_write, do_ping_pong, kill_possible, running, loading = (
+    do_kill, do_write, do_ping_pong, kill_possible, running, loading, rush_active = (
         False,
         False,
         False,
         True,
         True,
+        False,
         False,
     )
 
@@ -249,6 +262,7 @@ def game(player_name, player_color, is_multiplayer, d):
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Among Ys Rewrite")
     clock = pygame.time.Clock()
+    pygame.mixer.init()
 
     logging.info("Rendering first frame...")
     font = pygame.font.Font(utils.get_path("arlrdbd.ttf"), 30)
@@ -377,6 +391,36 @@ def game(player_name, player_color, is_multiplayer, d):
 
             new_x = new_y = 0
 
+            if keys[pygame.K_r] and rush == "":
+                rush = "r"
+            if keys[pygame.K_u] and rush == "r":
+                rush = "ru"
+            if keys[pygame.K_s] and rush == "ru":
+                rush = "rus"
+            if keys[pygame.K_h] and rush == "rus":
+                rush = "rush"
+            print(rush)
+            if (
+                rush == "rush"
+                and not rush_active
+                and not is_multiplayer
+                and not chat_opened
+            ):
+                rush_active = True
+                pygame.mixer.music.load(utils.get_path("sounds/rush_e_1.mp3"))
+                pygame.mixer.music.play()
+
+            if not (
+                keys[pygame.K_r]
+                or keys[pygame.K_u]
+                or keys[pygame.K_s]
+                or keys[pygame.K_h]
+            ):
+                rush = ""
+
+            if pygame.mixer.music.get_busy() != True and rush_active:
+                raise RushE
+
             if do_ping_pong:
                 if do_ping_pong == True:
                     do_ping_pong = random.randint(1, 8)
@@ -481,6 +525,9 @@ def game(player_name, player_color, is_multiplayer, d):
             kill_btn.center = (1200, 640)
 
             overlay = pygame.image.load(utils.get_path("img/overlay.png"))
+            overlay = pygame.transform.scale(
+                overlay, (math.ceil(1280 * vis_coff), math.ceil(720 * vis_coff))
+            )
 
             back = pygame.image.load(utils.get_path("img/skeld.png"))
             crew = Crew(player_color, player_name)
@@ -582,7 +629,7 @@ def game(player_name, player_color, is_multiplayer, d):
             screen.blit(back, (x, y))
             for i in bots:
                 do_draw = True
-                if i.distance_from_center() > 200:
+                if i.distance_from_center() > 200 * vis_coff:
                     do_draw = False
                 i.update(x, y, screen, orient, do_draw)
             for i in players:
@@ -590,7 +637,13 @@ def game(player_name, player_color, is_multiplayer, d):
             crew.update(orient)
             crew.draw(screen)
             walls.get_rect().center = (x, y)
-            screen.blit(overlay, (0, 0))
+            screen.blit(
+                overlay,
+                (
+                    1280 - (1280 * vis_coff) + (1280 * vis_coff * 0.25),
+                    720 - (720 * vis_coff) + (720 * vis_coff * 0.25),
+                ),
+            )
             if not is_multiplayer:
                 screen.blit(counter, (0, 0))
                 if kill_possible:
@@ -780,6 +833,10 @@ def main():
         else:
             error = str(traceback.format_exc())
 
+            if error[-39:].startswith("NameError: name 'RushE' is not defined"):
+                error = "E"
+                pygame.quit()
+
             logging.fatal(error)
             print(error)
             pygame.quit()
@@ -797,6 +854,15 @@ def main():
             ).pack(pady=5)
 
             logging.info("Done!")
+
+            if error == "E":
+
+                def rush_e():
+                    os.system(utils.get_path("sounds/rush_e_2.mp3"))
+
+                x = threading.Thread(target=rush_e)
+                x.start()
+
             tk.mainloop()
 
 
