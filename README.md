@@ -1,4 +1,8 @@
-# Among Ys Rewrite <a href="https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite"><img src = "https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite/badge"></a> <a href="https://discord.gg/EuDqUCkDf6"><img src = "https://img.shields.io/discord/776546039804330005.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2"></a>
+# DISCOUNTINUED
+
+This has a lot of stuff to do to archive it for good (like unhardcoding some things) but no one uses it so who cares.
+
+## Among Ys Rewrite <a href="https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite"><img src = "https://www.codefactor.io/repository/github/milena-kos/among-ys-rewrite/badge"></a> <a href="https://discord.gg/EuDqUCkDf6"><img src = "https://img.shields.io/discord/776546039804330005.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2"></a>
 
 <p align="center">
 <img src = "https://forthebadge.com/images/badges/made-with-python.svg">
@@ -14,7 +18,7 @@ https://among-ys.glitch.me
 Discord server:
 https://discord.gg/tcSpWhnhTX
 
-# Build
+## Build
 
 You need to have Python 3.8 32-bits
 
@@ -27,9 +31,9 @@ pip install pyinstaller
 
 Then run make.bat
 
-# Server hosting tutorial
+## Server hosting tutorial
 
 removed because i planning on creating public server
 
-# Copyright
+## Copyright
 This game is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.
